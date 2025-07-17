@@ -1,0 +1,11 @@
+Asset ID,Asset Name,Category,Purchase Date,Cost,Depreciation Method,Useful Life,Accumulated Depreciation,Net Book Value,Location,Vendor
+FA001,Office Building,Building,2022-01-15,50000000,Straight Line,60,1666667,48333333,Mumbai Office,ABC Construction
+FA002,Manufacturing Equipment,Plant & Machinery,2023-03-20,2500000,Straight Line,10,375000,2125000,Factory Floor,XYZ Machinery
+FA003,Computer System - Desktop,IT Equipment,2024-01-10,150000,Straight Line,3,45000,105000,IT Department,Tech Solutions
+FA004,Laptop - Dell,IT Equipment,2024-02-15,80000,Straight Line,3,22222,57778,Finance Dept,Dell India
+FA005,Printer - Laser,Office Equipment,2024-03-01,25000,Straight Line,5,4167,20833,Admin Office,HP India
+FA006,Conference Table,Furniture,2023-06-15,120000,Straight Line,10,9000,111000,Conference Room,Furniture World
+FA007,Vehicle - Maruti Suzuki,Vehicles,2023-08-20,800000,Straight Line,8,83333,716667,Transport,Maruti Suzuki
+FA008,Air Conditioning System,HVAC,2023-11-10,450000,Straight Line,15,22500,427500,Office Building,Cool Air Systems
+FA009,Generator - Diesel,Electrical,2024-04-12,350000,Straight Line,12,20833,329167,Utility Area,Power Solutions
+FA010,Security System,Security,2024-05-20,200000,Straight Line,7,14286,185714,Entire Building,SecureTech India

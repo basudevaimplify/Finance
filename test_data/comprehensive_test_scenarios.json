@@ -1,0 +1,169 @@
+{
+  "user_workflows": {
+    "new_user_onboarding": {
+      "company_name": "Test Company Pvt Ltd",
+      "industry": "Technology",
+      "company_size": "50-100 employees",
+      "annual_revenue": "5-10 crores",
+      "primary_use_case": "Quarterly compliance",
+      "expected_documents": [
+        "vendor_invoices",
+        "sales_register",
+        "salary_register"
+      ]
+    },
+    "quarterly_closure_workflow": {
+      "quarter": "Q3_2025",
+      "documents_to_process": [
+        "vendor_invoices.xlsx",
+        "sales_register.xlsx",
+        "salary_register.xlsx",
+        "bank_statement.xlsx",
+        "gst_documents.pdf",
+        "tds_documents.pdf"
+      ],
+      "expected_reports": [
+        "trial_balance",
+        "profit_loss",
+        "balance_sheet"
+      ],
+      "compliance_checks": [
+        "gst_validation",
+        "tds_validation",
+        "audit_trail"
+      ]
+    },
+    "bulk_document_processing": {
+      "document_count": 50,
+      "file_types": [
+        "xlsx",
+        "pdf",
+        "csv"
+      ],
+      "processing_time_expected": "5-10 minutes",
+      "ai_agents_involved": [
+        "ClassifierBot",
+        "DataExtractor",
+        "JournalBot",
+        "AuditAgent"
+      ]
+    },
+    "compliance_validation": {
+      "gst_scenarios": [
+        "valid_gst",
+        "invalid_gst",
+        "missing_gst"
+      ],
+      "tds_scenarios": [
+        "correct_tds",
+        "incorrect_rate",
+        "missing_deduction"
+      ],
+      "audit_scenarios": [
+        "clean_audit",
+        "minor_issues",
+        "major_discrepancies"
+      ]
+    },
+    "error_handling": {
+      "file_errors": [
+        "corrupted_file",
+        "unsupported_format",
+        "large_file"
+      ],
+      "processing_errors": [
+        "api_rate_limit",
+        "network_timeout",
+        "invalid_data"
+      ],
+      "recovery_scenarios": [
+        "auto_retry",
+        "manual_intervention",
+        "fallback_processing"
+      ]
+    }
+  },
+  "performance_testing": {
+    "concurrent_users": [
+      1,
+      5,
+      10,
+      25,
+      50
+    ],
+    "document_sizes": [
+      "small (< 1MB)",
+      "medium (1-10MB)",
+      "large (10-50MB)"
+    ],
+    "processing_volumes": [
+      10,
+      50,
+      100,
+      500,
+      1000
+    ]
+  },
+  "edge_cases": {
+    "data_quality": [
+      "missing_values",
+      "invalid_formats",
+      "duplicate_entries"
+    ],
+    "system_limits": [
+      "max_file_size",
+      "max_concurrent_processing",
+      "rate_limiting"
+    ],
+    "integration_failures": [
+      "api_timeouts",
+      "database_errors",
+      "external_service_down"
+    ]
+  },
+  "compliance_scenarios": {
+    "gst_compliance": {
+      "gstNumber": "29ABCDE1234F1Z5",
+      "period": "2025-01",
+      "totalSales": 5000000,
+      "totalPurchases": 3000000,
+      "outputGST": 900000,
+      "inputGST": 540000,
+      "netGST": 360000,
+      "returns": {
+        "gstr1_filed": true,
+        "gstr3b_filed": true,
+        "gstr2a_reconciled": false
+      },
+      "compliance_issues": [
+        "Input tax credit mismatch in GSTR-2A",
+        "Late filing of GSTR-3B for previous month"
+      ]
+    },
+    "tds_compliance": {
+      "tanNumber": "ABCD12345E",
+      "quarter": "Q3_2025",
+      "totalDeductions": 150000,
+      "categories": {
+        "salary": 80000,
+        "professional_fees": 45000,
+        "interest": 15000,
+        "rent": 10000
+      },
+      "returns": {
+        "tds_return_filed": true,
+        "certificates_issued": true,
+        "payment_made": true
+      },
+      "compliance_issues": [
+        "TDS certificate pending for 2 vendors",
+        "Quarterly return filing due in 5 days"
+      ]
+    },
+    "audit_requirements": {
+      "documentation": "complete",
+      "trail_completeness": "full",
+      "data_integrity": "verified"
+    }
+  }
+}

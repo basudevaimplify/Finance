@@ -1,0 +1,1 @@
+# QRT Closure Agent Platform - Python FastAPI Implementation

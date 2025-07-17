@@ -1,0 +1,22 @@
+{
+  "generation_date": "2025-07-13T17:13:56.850987",
+  "files_created": [
+    "vendor_invoices_comprehensive.xlsx (30 records)",
+    "sales_register_comprehensive.xlsx (40 records)",
+    "salary_register_comprehensive.xlsx (25 records)",
+    "bank_statement_comprehensive.xlsx (50 records)",
+    "trial_balance_comprehensive.xlsx (10 accounts)",
+    "journal_entries_comprehensive.csv (100 records)",
+    "purchase_register_comprehensive.csv (35 records)",
+    "comprehensive_test_scenarios.json"
+  ],
+  "total_records": 290,
+  "coverage": [
+    "All document types supported",
+    "All user workflows covered",
+    "Performance testing scenarios",
+    "Error handling cases",
+    "Compliance validation data",
+    "Edge cases and limits"
+  ]
+}

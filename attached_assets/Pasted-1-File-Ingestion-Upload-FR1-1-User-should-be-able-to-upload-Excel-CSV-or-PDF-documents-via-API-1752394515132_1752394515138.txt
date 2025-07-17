@@ -1,0 +1,121 @@
+1. File Ingestion & Upload
+FR1.1: User should be able to upload Excel, CSV, or PDF documents via API or UI.
+
+FR1.2: Uploaded files should be stored in S3 (or local folder during dev).
+
+FR1.3: System must validate MIME type and file size (max 100 MB).
+
+FR1.4: Each file must be tagged with a UUID and metadata (user, date, document type).
+
+FR1.5: User must receive a unique job ID after upload for tracking progress.
+
+🧠 2. Document Classification
+FR2.1: System must auto-classify uploaded documents as one of: Journal, GST, TDS, Trial Balance, Fixed Asset Register, Purchase/Sales Register, etc.
+
+FR2.2: Classification must use file name + header patterns + LLM/OCR logic.
+
+FR2.3: Misclassified files must be flagged and listed in the validation report.
+
+🔍 3. Data Extraction
+FR3.1: The system must extract tabular data from:
+
+Excel (multi-tab, merged cells)
+
+CSV (with header detection)
+
+PDF (table zones using PyMuPDF or layout parser)
+
+FR3.2: Extracted data must be structured into predefined JSON schemas.
+
+FR3.3: Extracted fields must include: Date, Account, Type (Dr/Cr), Amount, Entity, Narration, etc.
+
+FR3.4: System must identify and separate multi-table sheets automatically.
+
+✅ 4. Validation & Preprocessing
+FR4.1: Journal entries must be validated for:
+
+Null values
+
+Missing/invalid GL codes
+
+Unbalanced debit/credit entries
+
+Duplicate journal IDs
+
+FR4.2: GST data must be validated against GSTR-2A/3B
+
+FR4.3: TDS data must be validated against PAN, Section, and Form 26Q structure
+
+FR4.4: Fixed Asset Register must be checked for missing depreciation method/rate
+
+🧾 5. Journal Entry Creation
+FR5.1: System must generate double-entry journal entries from raw inputs
+
+FR5.2: Predefined templates must be used for:
+
+Sales, Purchase, Payment, Salary, Provisions, Asset Additions
+
+FR5.3: Journal entry output must be exportable in Excel, JSON, or API-ready format
+
+📊 6. Trial Balance & Financials
+FR6.1: System must auto-compile Trial Balance for each entity from journals
+
+FR6.2: System must generate:
+
+Profit & Loss Statement
+
+Balance Sheet
+
+Cash Flow Statement (indirect method)
+
+FR6.3: Output must be downloadable in Excel or PDF
+
+FR6.4: System must support consolidated financials across entities
+
+🧮 7. Tax Compliance Checks
+FR7.1: GSTValidator Agent must match ITC claims with purchase register + GSTR-2B
+
+FR7.2: TDSValidator must flag short/excess deduction based on Form 26Q + PAN + Section
+
+FR7.3: Tax reports must include compliance dashboards with mismatch summaries
+
+🏢 8. Fixed Asset Reconciliation
+FR8.1: Depreciation must be auto-calculated using WDV or SLM methods
+
+FR8.2: Asset addition/disposal must be tracked from purchase entries
+
+FR8.3: FA schedule must match GL entries and show variance (if any)
+
+📤 9. Audit Log & Workflow Management
+FR9.1: Every agent action must be recorded with timestamp and job ID
+
+FR9.2: Auditor must have read-only access to trails + ability to raise queries
+
+FR9.3: AuditBot must fetch supporting docs per journal or entry on request
+
+FR9.4: QueryTracker must log open/closed/resolved audit queries
+
+🧑‍💼 10. User Roles & Access
+FR10.1: System must support role-based access:
+
+Finance Exec, Tax Manager, Consolidation Lead, Auditor, Admin
+
+FR10.2: Entity-level data access restrictions must be enforced
+
+FR10.3: Admin must be able to manage user permissions via UI/API
+
+📑 11. Regulatory Output Generation
+FR11.1: System must generate MCA filings:
+
+AOC-4 (XML), MGT-7 (XML)
+
+FR11.2: Board Pack must be exportable in PowerPoint + Excel format
+
+FR11.3: SEBI disclosures (if listed entity) must be auto-filled (XBRL ready)
+
+🚀 12. Agent Orchestration (LangGraph)
+FR12.1: All agents must be orchestrated via a LangGraph DAG or flow
+
+FR12.2: Agents should run asynchronously where possible
+
+FR12.3: Failed agent steps must be logged and retryable

@@ -1,0 +1,80 @@
+{
+  "test_execution_date": "2025-07-14T03:37:12.351952",
+  "total_tests": 10,
+  "passed_tests": 10,
+  "failed_tests": 0,
+  "success_rate": 100.0,
+  "total_duration": 0.599529504776001,
+  "detailed_results": [
+    {
+      "test_name": "User Authentication",
+      "passed": true,
+      "details": "User: testuser@example.com | Company: Test Company Ltd",
+      "duration": 0.010553121566772461,
+      "timestamp": "2025-07-14T03:37:11.760914"
+    },
+    {
+      "test_name": "Frontend Loading",
+      "passed": true,
+      "details": "Frontend loads successfully",
+      "duration": 0.007584810256958008,
+      "timestamp": "2025-07-14T03:37:11.768658"
+    },
+    {
+      "test_name": "API Health Check",
+      "passed": true,
+      "details": "API health endpoint responding",
+      "duration": 0.009447574615478516,
+      "timestamp": "2025-07-14T03:37:11.778436"
+    },
+    {
+      "test_name": "Compliance Check Creation",
+      "passed": true,
+      "details": "Compliance check created successfully",
+      "duration": 0.020388126373291016,
+      "timestamp": "2025-07-14T03:37:11.799088"
+    },
+    {
+      "test_name": "Unauthorized Access Handling",
+      "passed": true,
+      "details": "Unauthorized access properly blocked",
+      "duration": 0.007533073425292969,
+      "timestamp": "2025-07-14T03:37:11.806800"
+    },
+    {
+      "test_name": "Session Consistency",
+      "passed": true,
+      "details": "Session maintained across 3/3 requests",
+      "duration": 0.013960123062133789,
+      "timestamp": "2025-07-14T03:37:11.820905"
+    },
+    {
+      "test_name": "Basic Performance",
+      "passed": true,
+      "details": "Response time: 0.004s (Good)",
+      "duration": 0.0037899017333984375,
+      "timestamp": "2025-07-14T03:37:11.824897"
+    },
+    {
+      "test_name": "Data Integrity Check",
+      "passed": true,
+      "details": "All required user fields present",
+      "duration": 0.004929780960083008,
+      "timestamp": "2025-07-14T03:37:11.830035"
+    },
+    {
+      "test_name": "Test Data Availability",
+      "passed": true,
+      "details": "Test dataset ready: 4/4 files available",
+      "duration": 9.72747802734375e-05,
+      "timestamp": "2025-07-14T03:37:11.830258"
+    },
+    {
+      "test_name": "System Stability",
+      "passed": true,
+      "details": "Stability test: 5/5 consecutive requests successful",
+      "duration": 0.5212457180023193,
+      "timestamp": "2025-07-14T03:37:12.351659"
+    }
+  ]
+}

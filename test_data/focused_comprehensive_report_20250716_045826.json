@@ -1,0 +1,178 @@
+{
+  "test_execution_date": "2025-07-16T04:58:26.791888",
+  "total_tests": 24,
+  "passed_tests": 7,
+  "failed_tests": 17,
+  "success_rate": 29.166666666666668,
+  "total_duration": 3.624809741973877,
+  "detailed_results": [
+    {
+      "test_name": "Authentication System",
+      "passed": true,
+      "details": "User authenticated: testuser@example.com",
+      "duration": 2.69923734664917,
+      "timestamp": "2025-07-16T04:58:25.857297"
+    },
+    {
+      "test_name": "Trial Balance - Q1_2025",
+      "passed": false,
+      "details": "Failed to generate Trial Balance for Q1_2025",
+      "duration": 0.004839420318603516,
+      "timestamp": "2025-07-16T04:58:25.862605"
+    },
+    {
+      "test_name": "Profit & Loss - Q1_2025",
+      "passed": false,
+      "details": "Failed to generate Profit & Loss for Q1_2025",
+      "duration": 0.0039653778076171875,
+      "timestamp": "2025-07-16T04:58:25.866720"
+    },
+    {
+      "test_name": "Balance Sheet - Q1_2025",
+      "passed": false,
+      "details": "Failed to generate Balance Sheet for Q1_2025",
+      "duration": 0.004487037658691406,
+      "timestamp": "2025-07-16T04:58:25.871340"
+    },
+    {
+      "test_name": "Cash Flow - Q1_2025",
+      "passed": false,
+      "details": "Failed to generate Cash Flow for Q1_2025",
+      "duration": 0.005063772201538086,
+      "timestamp": "2025-07-16T04:58:25.876557"
+    },
+    {
+      "test_name": "Trial Balance - Q2_2025",
+      "passed": false,
+      "details": "Failed to generate Trial Balance for Q2_2025",
+      "duration": 0.004233121871948242,
+      "timestamp": "2025-07-16T04:58:25.880975"
+    },
+    {
+      "test_name": "Profit & Loss - Q2_2025",
+      "passed": false,
+      "details": "Failed to generate Profit & Loss for Q2_2025",
+      "duration": 0.004683256149291992,
+      "timestamp": "2025-07-16T04:58:25.885782"
+    },
+    {
+      "test_name": "Balance Sheet - Q2_2025",
+      "passed": false,
+      "details": "Failed to generate Balance Sheet for Q2_2025",
+      "duration": 0.003889322280883789,
+      "timestamp": "2025-07-16T04:58:25.891192"
+    },
+    {
+      "test_name": "Cash Flow - Q2_2025",
+      "passed": false,
+      "details": "Failed to generate Cash Flow for Q2_2025",
+      "duration": 0.005280017852783203,
+      "timestamp": "2025-07-16T04:58:25.896663"
+    },
+    {
+      "test_name": "Trial Balance - Q3_2025",
+      "passed": false,
+      "details": "Failed to generate Trial Balance for Q3_2025",
+      "duration": 0.004309892654418945,
+      "timestamp": "2025-07-16T04:58:25.901187"
+    },
+    {
+      "test_name": "Profit & Loss - Q3_2025",
+      "passed": false,
+      "details": "Failed to generate Profit & Loss for Q3_2025",
+      "duration": 0.0054242610931396484,
+      "timestamp": "2025-07-16T04:58:25.906787"
+    },
+    {
+      "test_name": "Balance Sheet - Q3_2025",
+      "passed": false,
+      "details": "Failed to generate Balance Sheet for Q3_2025",
+      "duration": 0.0042040348052978516,
+      "timestamp": "2025-07-16T04:58:25.911113"
+    },
+    {
+      "test_name": "Cash Flow - Q3_2025",
+      "passed": false,
+      "details": "Failed to generate Cash Flow for Q3_2025",
+      "duration": 0.003708362579345703,
+      "timestamp": "2025-07-16T04:58:25.915036"
+    },
+    {
+      "test_name": "Trial Balance - Q4_2025",
+      "passed": false,
+      "details": "Failed to generate Trial Balance for Q4_2025",
+      "duration": 0.004869699478149414,
+      "timestamp": "2025-07-16T04:58:25.920275"
+    },
+    {
+      "test_name": "Profit & Loss - Q4_2025",
+      "passed": false,
+      "details": "Failed to generate Profit & Loss for Q4_2025",
+      "duration": 0.004549741744995117,
+      "timestamp": "2025-07-16T04:58:25.924991"
+    },
+    {
+      "test_name": "Balance Sheet - Q4_2025",
+      "passed": false,
+      "details": "Failed to generate Balance Sheet for Q4_2025",
+      "duration": 0.004297971725463867,
+      "timestamp": "2025-07-16T04:58:25.929595"
+    },
+    {
+      "test_name": "Cash Flow - Q4_2025",
+      "passed": false,
+      "details": "Failed to generate Cash Flow for Q4_2025",
+      "duration": 0.00341796875,
+      "timestamp": "2025-07-16T04:58:25.933114"
+    },
+    {
+      "test_name": "Compliance Check Creation",
+      "passed": false,
+      "details": "Failed to create compliance check",
+      "duration": 0.006505012512207031,
+      "timestamp": "2025-07-16T04:58:25.940248"
+    },
+    {
+      "test_name": "Workflow System",
+      "passed": true,
+      "details": "Found 0 workflows",
+      "duration": 0.010726690292358398,
+      "timestamp": "2025-07-16T04:58:25.951614"
+    },
+    {
+      "test_name": "Financial Statements System",
+      "passed": true,
+      "details": "Found 51 financial statements",
+      "duration": 0.3823544979095459,
+      "timestamp": "2025-07-16T04:58:26.335027"
+    },
+    {
+      "test_name": "API Performance Test",
+      "passed": true,
+      "details": "5/5 requests successful (100.0%)",
+      "duration": 0.37411069869995117,
+      "timestamp": "2025-07-16T04:58:26.709658"
+    },
+    {
+      "test_name": "Data Integrity Check",
+      "passed": true,
+      "details": "User ID consistent across endpoints: 9e36c4db...",
+      "duration": 0.0725250244140625,
+      "timestamp": "2025-07-16T04:58:26.782560"
+    },
+    {
+      "test_name": "Unauthorized Access Handling",
+      "passed": true,
+      "details": "Unauthorized access properly blocked",
+      "duration": 0.004010915756225586,
+      "timestamp": "2025-07-16T04:58:26.787224"
+    },
+    {
+      "test_name": "Invalid Endpoint Handling",
+      "passed": true,
+      "details": "Invalid endpoint properly handled",
+      "duration": 0.0041162967681884766,
+      "timestamp": "2025-07-16T04:58:26.791567"
+    }
+  ]
+}

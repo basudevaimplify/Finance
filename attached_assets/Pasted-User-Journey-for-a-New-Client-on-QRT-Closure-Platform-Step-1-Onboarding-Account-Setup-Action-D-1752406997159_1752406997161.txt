@@ -1,0 +1,68 @@
+User Journey for a New Client on QRT Closure Platform
+🟢 Step 1: Onboarding & Account Setup
+Action	Description
+✅ Client signs up	Using company name, PAN, GSTIN, email, mobile
+👥 User roles defined	Admin adds Finance Exec, Tax Manager, Auditor
+🏢 Entities configured	Add business units: Entity A, Entity B, etc.
+📋 Close calendar configured	Due dates for Q1–Q4 closure, reminders set
+🔒 Role-based access granted	Define who can upload, approve, audit
+
+🔧 Outcome: Company and user structure is in place
+
+🟡 Step 2: Data Source Configuration (One-time)
+Action	Description
+🔗 ERP connector setup (optional)	Tally, SAP, Zoho, Oracle APIs or manual upload
+📤 Data format templates shared	Upload guides for sales, purchase, GST, etc.
+🗂 Pre-load master data	GL codes, TDS sections, vendors, cost centers
+🧠 AI learning initialized	System samples historical entries to fine-tune templates
+
+🔧 Outcome: System knows the company’s data structure
+
+🟠 Step 3: Quarterly Close Begins
+Action	Description
+📁 Upload raw financial docs	Drag-and-drop Excel/PDFs for: sales, invoices, bank, salaries, FA
+🤖 Agent pipeline kicks in	Auto-classify → extract → validate → journalize
+📊 Dashboards update in real-time	Upload progress, flagged issues, checklist status
+🧾 GST/TDS matched & reports generated	Mismatches flagged, reports downloadable
+🧮 Trial Balance & Financials ready	Auto-generated P&L, BS, CF by entity or group
+
+🔧 Outcome: All books closed with minimal effort and maximum traceability
+
+🔵 Step 4: Audit & Filing
+Action	Description
+👀 Auditor access enabled	Read-only with comment rights
+🧾 Audit trail available	Journal-level changes, approvals logged
+💬 Query resolution dashboard	In-app comments tracked and resolved
+📥 Filing-ready outputs	MCA AOC-4, MGT-7, board pack auto-generated
+
+🔧 Outcome: Auditor can finish review faster; filings are ready
+
+🟣 Step 5: Post-Close Reports & Nudges
+Action	Description
+📬 Email summary sent to CFO, Controller	Entity-wise closure report
+🧠 AI Suggestions	“You missed a recurring rent provision from Q3”, “TDS error from last period repeated”
+🔄 Workflow learning improves	Patterns added to automate more entries in the next quarter
+
+🔧 Outcome: System gets smarter, team gets proactive nudges
+
+🧑‍💼 Personas and Their Flows
+Persona	Key Actions
+Finance Executive	Uploads journals, reviews validation results, triggers agents
+Tax Manager	Uploads GST/TDS files, reviews mismatch reports
+Consolidation Lead	Finalizes group P&L, BS, IC eliminations
+Auditor	Reads journals, raises queries, approves trails
+Admin	Adds users, controls access, sets calendar, monitors logs
+
+📈 UX Principles for the Platform
+📦 Modular onboarding wizard (company → users → data → calendar)
+
+🧩 Agent pipeline progress bar per upload
+
+🧾 Auto-saved draft closure packages
+
+🔍 Click-to-view mismatch logs (GL, TDS, GST)
+
+📤 Single-click MCA/Board report download
+
+📬 Reminders and nudges before due dates
+

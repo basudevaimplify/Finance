@@ -1,0 +1,101 @@
+journalId,date,accountCode,accountName,debitAmount,creditAmount,narration,entity,documentRef
+JE-2025-001,2025-05-23,SALES,Accounts Receivable,70170,51365,Interest received,Retail Chain Operations,DOC-7308
+JE-2025-002,2025-07-10,SALARY,Sales Revenue,80542,9820,Purchase of office supplies,TechCorp Solutions Pvt Ltd,DOC-6675
+JE-2025-003,2025-06-05,CASH,Accounts Receivable,76352,81175,Utility bill payment,Export Import Co Ltd,DOC-5487
+JE-2025-004,2025-06-29,SALES,Fixed Assets,58178,91801,Salary payment,Retail Chain Operations,DOC-8780
+JE-2025-005,2025-04-23,CASH,Cash and Bank,5604,21693,Tax payment,Manufacturing Industries Ltd,DOC-9991
+JE-2025-006,2025-06-25,INVENTORY,Accounts Payable,35124,34684,Rent payment,Retail Chain Operations,DOC-5296
+JE-2025-007,2025-06-01,UTILITIES,Sales Revenue,93402,51771,Salary payment,Manufacturing Industries Ltd,DOC-4481
+JE-2025-008,2025-07-11,RECEIVABLE,Interest Income,49995,32117,Purchase of office supplies,Retail Chain Operations,DOC-5034
+JE-2025-009,2025-05-04,UTILITIES,Accounts Payable,52916,55856,Rent payment,Retail Chain Operations,DOC-5472
+JE-2025-010,2025-06-19,UTILITIES,Cash and Bank,5734,21673,Salary payment,Consulting Services India,DOC-1565
+JE-2025-011,2025-04-22,INVENTORY,Accounts Receivable,8655,7623,Interest received,Consulting Services India,DOC-8946
+JE-2025-012,2025-05-06,SALES,Interest Income,31162,59724,Utility bill payment,Export Import Co Ltd,DOC-9588
+JE-2025-013,2025-04-22,PAYABLE,Accounts Payable,73292,23030,Customer payment received,Export Import Co Ltd,DOC-3056
+JE-2025-014,2025-05-10,CASH,Interest Income,43973,54285,Rent payment,TechCorp Solutions Pvt Ltd,DOC-9250
+JE-2025-015,2025-06-21,RECEIVABLE,Inventory,86633,35494,Purchase of office supplies,Retail Chain Operations,DOC-1910
+JE-2025-016,2025-05-25,UTILITIES,Utilities Expenses,53978,78295,Tax payment,Consulting Services India,DOC-3018
+JE-2025-017,2025-06-11,INVENTORY,Fixed Assets,9735,57563,Rent payment,Manufacturing Industries Ltd,DOC-5448
+JE-2025-018,2025-04-28,SALES,Utilities Expenses,22096,64382,Payment to vendor,Consulting Services India,DOC-9456
+JE-2025-019,2025-06-11,INVENTORY,Inventory,52468,33987,Tax payment,Manufacturing Industries Ltd,DOC-1171
+JE-2025-020,2025-06-25,SALARY,Sales Revenue,8447,23116,Tax payment,Manufacturing Industries Ltd,DOC-5067
+JE-2025-021,2025-07-12,PAYABLE,Interest Income,3667,45571,Interest received,Export Import Co Ltd,DOC-8534
+JE-2025-022,2025-05-04,PAYABLE,Salary Expenses,10739,47876,Salary payment,Manufacturing Industries Ltd,DOC-9064
+JE-2025-023,2025-06-10,INVENTORY,Sales Revenue,74486,44981,Utility bill payment,Manufacturing Industries Ltd,DOC-4378
+JE-2025-024,2025-06-19,RECEIVABLE,Inventory,90271,29250,Utility bill payment,Manufacturing Industries Ltd,DOC-9216
+JE-2025-025,2025-07-06,CASH,Utilities Expenses,75504,25486,Interest received,Manufacturing Industries Ltd,DOC-6896
+JE-2025-026,2025-04-19,RECEIVABLE,Accounts Payable,54583,19518,Utility bill payment,Consulting Services India,DOC-2928
+JE-2025-027,2025-07-11,INTEREST,Rent Expenses,73619,21000,Utility bill payment,Manufacturing Industries Ltd,DOC-2464
+JE-2025-028,2025-04-20,SALARY,Salary Expenses,82518,26222,Payment to vendor,Manufacturing Industries Ltd,DOC-3387
+JE-2025-029,2025-05-17,FIXED_ASSETS,Cash and Bank,88318,94495,Customer payment received,Export Import Co Ltd,DOC-8144
+JE-2025-030,2025-05-20,RENT,Fixed Assets,29572,50525,Rent payment,Export Import Co Ltd,DOC-2682
+JE-2025-031,2025-07-04,RENT,Rent Expenses,63856,383,Payment to vendor,Manufacturing Industries Ltd,DOC-4818
+JE-2025-032,2025-05-23,PAYABLE,Cash and Bank,95283,80204,Customer payment received,Manufacturing Industries Ltd,DOC-3432
+JE-2025-033,2025-04-25,SALARY,Rent Expenses,41374,86857,Utility bill payment,Export Import Co Ltd,DOC-5596
+JE-2025-034,2025-06-15,UTILITIES,Fixed Assets,32380,98936,Tax payment,Manufacturing Industries Ltd,DOC-4523
+JE-2025-035,2025-04-27,SALARY,Salary Expenses,71775,85943,Interest received,Consulting Services India,DOC-7129
+JE-2025-036,2025-06-16,SALARY,Rent Expenses,68640,80800,Salary payment,Manufacturing Industries Ltd,DOC-1968
+JE-2025-037,2025-07-12,INVENTORY,Utilities Expenses,46078,76193,Payment to vendor,Manufacturing Industries Ltd,DOC-9648
+JE-2025-038,2025-05-18,SALARY,Interest Income,72530,9566,Payment to vendor,Consulting Services India,DOC-2114
+JE-2025-039,2025-05-07,FIXED_ASSETS,Rent Expenses,66536,38909,Tax payment,Retail Chain Operations,DOC-1850
+JE-2025-040,2025-06-23,INVENTORY,Rent Expenses,80782,92655,Interest received,Consulting Services India,DOC-5871
+JE-2025-041,2025-05-11,INTEREST,Accounts Receivable,16831,34169,Purchase of office supplies,Consulting Services India,DOC-5023
+JE-2025-042,2025-05-28,INVENTORY,Inventory,98619,45171,Rent payment,Export Import Co Ltd,DOC-7695
+JE-2025-043,2025-06-05,RENT,Fixed Assets,68738,22746,Tax payment,Consulting Services India,DOC-7048
+JE-2025-044,2025-06-01,SALES,Inventory,9116,8770,Payment to vendor,Export Import Co Ltd,DOC-5615
+JE-2025-045,2025-07-11,RENT,Sales Revenue,80980,58213,Payment to vendor,TechCorp Solutions Pvt Ltd,DOC-8842
+JE-2025-046,2025-06-02,RENT,Rent Expenses,25544,81941,Interest received,Manufacturing Industries Ltd,DOC-7383
+JE-2025-047,2025-06-19,UTILITIES,Utilities Expenses,58488,84903,Salary payment,Manufacturing Industries Ltd,DOC-8842
+JE-2025-048,2025-06-27,CASH,Salary Expenses,17109,63754,Salary payment,Export Import Co Ltd,DOC-4675
+JE-2025-049,2025-05-29,FIXED_ASSETS,Salary Expenses,61741,39153,Tax payment,Retail Chain Operations,DOC-4824
+JE-2025-050,2025-05-25,SALES,Interest Income,28128,38133,Rent payment,Consulting Services India,DOC-1931
+JE-2025-051,2025-06-05,INVENTORY,Accounts Receivable,82514,150,Purchase of office supplies,Retail Chain Operations,DOC-2355
+JE-2025-052,2025-07-04,UTILITIES,Inventory,44965,60326,Payment to vendor,TechCorp Solutions Pvt Ltd,DOC-6459
+JE-2025-053,2025-06-11,RECEIVABLE,Interest Income,65602,4785,Interest received,Retail Chain Operations,DOC-1319
+JE-2025-054,2025-07-03,UTILITIES,Sales Revenue,69182,6458,Rent payment,Manufacturing Industries Ltd,DOC-8059
+JE-2025-055,2025-06-14,INTEREST,Cash and Bank,16337,97236,Tax payment,Consulting Services India,DOC-5874
+JE-2025-056,2025-07-10,RECEIVABLE,Fixed Assets,83082,64666,Utility bill payment,Export Import Co Ltd,DOC-4078
+JE-2025-057,2025-06-04,FIXED_ASSETS,Accounts Payable,23527,19657,Tax payment,TechCorp Solutions Pvt Ltd,DOC-4061
+JE-2025-058,2025-05-14,RENT,Cash and Bank,71124,83740,Payment to vendor,Consulting Services India,DOC-9413
+JE-2025-059,2025-06-17,RECEIVABLE,Inventory,36166,74700,Salary payment,Manufacturing Industries Ltd,DOC-5997
+JE-2025-060,2025-04-21,CASH,Accounts Receivable,62709,14481,Interest received,Export Import Co Ltd,DOC-2038
+JE-2025-061,2025-06-04,INTEREST,Fixed Assets,80036,69383,Salary payment,Consulting Services India,DOC-5969
+JE-2025-062,2025-04-24,RECEIVABLE,Fixed Assets,13278,25435,Salary payment,Export Import Co Ltd,DOC-8597
+JE-2025-063,2025-05-13,UTILITIES,Salary Expenses,31396,11585,Utility bill payment,Manufacturing Industries Ltd,DOC-6651
+JE-2025-064,2025-05-13,RENT,Rent Expenses,13064,6718,Interest received,Manufacturing Industries Ltd,DOC-6305
+JE-2025-065,2025-06-12,INTEREST,Fixed Assets,4552,64411,Customer payment received,Retail Chain Operations,DOC-3960
+JE-2025-066,2025-06-12,PAYABLE,Inventory,79568,47189,Tax payment,Consulting Services India,DOC-7854
+JE-2025-067,2025-07-07,SALES,Accounts Receivable,70178,4545,Tax payment,Consulting Services India,DOC-1031
+JE-2025-068,2025-04-14,RENT,Rent Expenses,75726,13523,Salary payment,Manufacturing Industries Ltd,DOC-1841
+JE-2025-069,2025-06-07,UTILITIES,Interest Income,53212,14731,Purchase of office supplies,TechCorp Solutions Pvt Ltd,DOC-5711
+JE-2025-070,2025-07-03,SALARY,Accounts Receivable,27969,94353,Tax payment,Retail Chain Operations,DOC-4652
+JE-2025-071,2025-05-21,SALARY,Sales Revenue,36194,5264,Purchase of office supplies,Consulting Services India,DOC-7476
+JE-2025-072,2025-04-22,CASH,Accounts Payable,1141,15404,Purchase of office supplies,Export Import Co Ltd,DOC-5254
+JE-2025-073,2025-04-14,SALARY,Sales Revenue,15602,23637,Payment to vendor,Retail Chain Operations,DOC-3421
+JE-2025-074,2025-04-20,FIXED_ASSETS,Utilities Expenses,667,64556,Tax payment,Manufacturing Industries Ltd,DOC-1841
+JE-2025-075,2025-07-04,CASH,Interest Income,71756,34926,Utility bill payment,TechCorp Solutions Pvt Ltd,DOC-6791
+JE-2025-076,2025-05-06,SALARY,Sales Revenue,59573,12094,Interest received,Consulting Services India,DOC-2854
+JE-2025-077,2025-05-20,RENT,Inventory,56762,34727,Utility bill payment,Export Import Co Ltd,DOC-6053
+JE-2025-078,2025-07-11,PAYABLE,Inventory,81323,10146,Purchase of office supplies,Retail Chain Operations,DOC-5948
+JE-2025-079,2025-04-27,INTEREST,Sales Revenue,6864,64992,Utility bill payment,Manufacturing Industries Ltd,DOC-4121
+JE-2025-080,2025-06-02,FIXED_ASSETS,Sales Revenue,93642,11778,Payment to vendor,TechCorp Solutions Pvt Ltd,DOC-5303
+JE-2025-081,2025-07-08,RENT,Accounts Receivable,19099,21158,Customer payment received,Consulting Services India,DOC-8822
+JE-2025-082,2025-04-20,CASH,Interest Income,63424,15493,Utility bill payment,Retail Chain Operations,DOC-1263
+JE-2025-083,2025-06-04,RECEIVABLE,Accounts Receivable,68755,38757,Payment to vendor,Consulting Services India,DOC-8946
+JE-2025-084,2025-07-08,SALARY,Accounts Payable,4357,65541,Tax payment,Consulting Services India,DOC-9879
+JE-2025-085,2025-05-30,UTILITIES,Rent Expenses,67339,56254,Purchase of office supplies,Manufacturing Industries Ltd,DOC-7614
+JE-2025-086,2025-04-21,PAYABLE,Salary Expenses,95150,25959,Rent payment,TechCorp Solutions Pvt Ltd,DOC-2792
+JE-2025-087,2025-06-23,SALES,Utilities Expenses,60268,9014,Customer payment received,Consulting Services India,DOC-7482
+JE-2025-088,2025-07-07,RENT,Accounts Payable,5121,4687,Tax payment,Retail Chain Operations,DOC-9481
+JE-2025-089,2025-06-22,CASH,Accounts Receivable,36064,32838,Tax payment,Export Import Co Ltd,DOC-4526
+JE-2025-090,2025-05-13,SALES,Fixed Assets,89376,51134,Rent payment,Manufacturing Industries Ltd,DOC-1360
+JE-2025-091,2025-07-10,RECEIVABLE,Accounts Receivable,75020,58329,Rent payment,TechCorp Solutions Pvt Ltd,DOC-7333
+JE-2025-092,2025-04-21,SALES,Fixed Assets,30682,88632,Customer payment received,Retail Chain Operations,DOC-8272
+JE-2025-093,2025-05-22,INTEREST,Salary Expenses,89173,18831,Payment to vendor,Export Import Co Ltd,DOC-2962
+JE-2025-094,2025-06-06,CASH,Sales Revenue,40399,55863,Salary payment,TechCorp Solutions Pvt Ltd,DOC-7457
+JE-2025-095,2025-04-26,INTEREST,Inventory,96785,17265,Payment to vendor,TechCorp Solutions Pvt Ltd,DOC-1675
+JE-2025-096,2025-05-24,UTILITIES,Salary Expenses,97066,59355,Customer payment received,Manufacturing Industries Ltd,DOC-4441
+JE-2025-097,2025-06-27,RENT,Rent Expenses,43353,77321,Payment to vendor,TechCorp Solutions Pvt Ltd,DOC-5292
+JE-2025-098,2025-05-13,PAYABLE,Accounts Receivable,43596,73867,Payment to vendor,Consulting Services India,DOC-4182
+JE-2025-099,2025-06-18,INVENTORY,Inventory,73730,45825,Tax payment,TechCorp Solutions Pvt Ltd,DOC-4126
+JE-2025-100,2025-04-30,RENT,Salary Expenses,277,93319,Customer payment received,Retail Chain Operations,DOC-1493

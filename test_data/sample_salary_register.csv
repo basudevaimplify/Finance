@@ -1,0 +1,16 @@
+Employee ID,Employee Name,Department,Designation,Basic Salary,HRA,Special Allowance,Gross Salary,PF Deduction,ESI Deduction,TDS Deduction,Net Salary,Month,Year
+EMP001,Rajesh Kumar,IT,Software Engineer,50000,20000,10000,80000,6000,600,8000,65400,December,2024
+EMP002,Priya Sharma,Finance,Accountant,45000,18000,8000,71000,5400,532,6500,58568,December,2024
+EMP003,Amit Patel,HR,HR Manager,60000,24000,12000,96000,7200,720,12000,76080,December,2024
+EMP004,Sunita Reddy,Operations,Operations Manager,55000,22000,11000,88000,6600,660,10000,70740,December,2024
+EMP005,Vikram Singh,Sales,Sales Executive,40000,16000,7000,63000,4800,480,5500,52220,December,2024
+EMP006,Neha Gupta,Marketing,Marketing Executive,42000,16800,7500,66300,5040,504,6000,54756,December,2024
+EMP007,Ravi Krishnan,IT,Senior Developer,65000,26000,13000,104000,7800,780,15000,80420,December,2024
+EMP008,Meera Joshi,Finance,Financial Analyst,48000,19200,9000,76200,5760,576,8500,61364,December,2024
+EMP009,Arun Nair,Operations,Operations Executive,38000,15200,6500,59700,4560,456,5000,49684,December,2024
+EMP010,Kavita Desai,HR,HR Executive,35000,14000,6000,55000,4200,420,4500,45880,December,2024
+EMP011,Suresh Agarwal,Sales,Sales Manager,70000,28000,14000,112000,8400,840,18000,84760,December,2024
+EMP012,Pooja Bansal,Marketing,Marketing Manager,58000,23200,11500,92700,6960,696,11500,73544,December,2024
+EMP013,Manoj Verma,IT,Junior Developer,32000,12800,5500,50300,3840,384,3000,43076,December,2024
+EMP014,Anjali Tripathi,Finance,Junior Accountant,30000,12000,5000,47000,3600,360,2500,40540,December,2024
+EMP015,Deepak Yadav,Operations,Supervisor,33000,13200,5800,52000,3960,396,3500,44144,December,2024

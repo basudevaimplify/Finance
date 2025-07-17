@@ -1,0 +1,19 @@
+node_modules
+dist
+.env
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+# Test and report outputs
+*test_results.json
+*report.json
+
+
+# Local data
+uploads/*
+!uploads/.gitkeep
+/*.csv
+
+__pycache__/
+*.pyc

@@ -1,0 +1,178 @@
+{
+  "test_execution_date": "2025-07-14T03:36:00.129029",
+  "total_tests": 24,
+  "passed_tests": 4,
+  "failed_tests": 20,
+  "success_rate": 16.666666666666664,
+  "total_duration": 0.2076113224029541,
+  "detailed_results": [
+    {
+      "test_name": "Authentication System",
+      "passed": true,
+      "details": "User authenticated: testuser@example.com",
+      "duration": 0.012785196304321289,
+      "timestamp": "2025-07-14T03:35:59.927582"
+    },
+    {
+      "test_name": "Trial Balance - Q1_2025",
+      "passed": false,
+      "details": "Error: Expecting value: line 1 column 1 (char 0)",
+      "duration": 0.007245063781738281,
+      "timestamp": "2025-07-14T03:35:59.935224"
+    },
+    {
+      "test_name": "Profit & Loss - Q1_2025",
+      "passed": false,
+      "details": "Error: Expecting value: line 1 column 1 (char 0)",
+      "duration": 0.00907754898071289,
+      "timestamp": "2025-07-14T03:35:59.944518"
+    },
+    {
+      "test_name": "Balance Sheet - Q1_2025",
+      "passed": false,
+      "details": "Error: Expecting value: line 1 column 1 (char 0)",
+      "duration": 0.009254693984985352,
+      "timestamp": "2025-07-14T03:35:59.953996"
+    },
+    {
+      "test_name": "Cash Flow - Q1_2025",
+      "passed": false,
+      "details": "Error: Expecting value: line 1 column 1 (char 0)",
+      "duration": 0.008996248245239258,
+      "timestamp": "2025-07-14T03:35:59.963105"
+    },
+    {
+      "test_name": "Trial Balance - Q2_2025",
+      "passed": false,
+      "details": "Error: Expecting value: line 1 column 1 (char 0)",
+      "duration": 0.009123086929321289,
+      "timestamp": "2025-07-14T03:35:59.972356"
+    },
+    {
+      "test_name": "Profit & Loss - Q2_2025",
+      "passed": false,
+      "details": "Error: Expecting value: line 1 column 1 (char 0)",
+      "duration": 0.007889986038208008,
+      "timestamp": "2025-07-14T03:35:59.980423"
+    },
+    {
+      "test_name": "Balance Sheet - Q2_2025",
+      "passed": false,
+      "details": "Error: Expecting value: line 1 column 1 (char 0)",
+      "duration": 0.01314091682434082,
+      "timestamp": "2025-07-14T03:35:59.993726"
+    },
+    {
+      "test_name": "Cash Flow - Q2_2025",
+      "passed": false,
+      "details": "Error: Expecting value: line 1 column 1 (char 0)",
+      "duration": 0.010209798812866211,
+      "timestamp": "2025-07-14T03:36:00.004096"
+    },
+    {
+      "test_name": "Trial Balance - Q3_2025",
+      "passed": false,
+      "details": "Error: Expecting value: line 1 column 1 (char 0)",
+      "duration": 0.009745121002197266,
+      "timestamp": "2025-07-14T03:36:00.013985"
+    },
+    {
+      "test_name": "Profit & Loss - Q3_2025",
+      "passed": false,
+      "details": "Error: Expecting value: line 1 column 1 (char 0)",
+      "duration": 0.007757902145385742,
+      "timestamp": "2025-07-14T03:36:00.021901"
+    },
+    {
+      "test_name": "Balance Sheet - Q3_2025",
+      "passed": false,
+      "details": "Error: Expecting value: line 1 column 1 (char 0)",
+      "duration": 0.0076236724853515625,
+      "timestamp": "2025-07-14T03:36:00.029649"
+    },
+    {
+      "test_name": "Cash Flow - Q3_2025",
+      "passed": false,
+      "details": "Error: Expecting value: line 1 column 1 (char 0)",
+      "duration": 0.008929967880249023,
+      "timestamp": "2025-07-14T03:36:00.038680"
+    },
+    {
+      "test_name": "Trial Balance - Q4_2025",
+      "passed": false,
+      "details": "Error: Expecting value: line 1 column 1 (char 0)",
+      "duration": 0.008379697799682617,
+      "timestamp": "2025-07-14T03:36:00.047179"
+    },
+    {
+      "test_name": "Profit & Loss - Q4_2025",
+      "passed": false,
+      "details": "Error: Expecting value: line 1 column 1 (char 0)",
+      "duration": 0.009909629821777344,
+      "timestamp": "2025-07-14T03:36:00.057739"
+    },
+    {
+      "test_name": "Balance Sheet - Q4_2025",
+      "passed": false,
+      "details": "Error: Expecting value: line 1 column 1 (char 0)",
+      "duration": 0.014534711837768555,
+      "timestamp": "2025-07-14T03:36:00.072420"
+    },
+    {
+      "test_name": "Cash Flow - Q4_2025",
+      "passed": false,
+      "details": "Error: Expecting value: line 1 column 1 (char 0)",
+      "duration": 0.006479740142822266,
+      "timestamp": "2025-07-14T03:36:00.079067"
+    },
+    {
+      "test_name": "Compliance Check Creation",
+      "passed": true,
+      "details": "Compliance check created successfully",
+      "duration": 0.007212638854980469,
+      "timestamp": "2025-07-14T03:36:00.086802"
+    },
+    {
+      "test_name": "Workflow System",
+      "passed": false,
+      "details": "Failed to retrieve workflows",
+      "duration": 0.0048198699951171875,
+      "timestamp": "2025-07-14T03:36:00.091911"
+    },
+    {
+      "test_name": "Financial Statements System",
+      "passed": false,
+      "details": "Failed to retrieve financial statements",
+      "duration": 0.003813505172729492,
+      "timestamp": "2025-07-14T03:36:00.096310"
+    },
+    {
+      "test_name": "API Performance Test",
+      "passed": false,
+      "details": "2/5 requests successful (40.0%)",
+      "duration": 0.018840551376342773,
+      "timestamp": "2025-07-14T03:36:00.115779"
+    },
+    {
+      "test_name": "Data Integrity Check",
+      "passed": true,
+      "details": "User ID consistent across endpoints: 9e36c4db...",
+      "duration": 0.003190755844116211,
+      "timestamp": "2025-07-14T03:36:00.119451"
+    },
+    {
+      "test_name": "Unauthorized Access Handling",
+      "passed": true,
+      "details": "Unauthorized access properly blocked",
+      "duration": 0.0030968189239501953,
+      "timestamp": "2025-07-14T03:36:00.123006"
+    },
+    {
+      "test_name": "Invalid Endpoint Handling",
+      "passed": false,
+      "details": "Invalid endpoint not handled",
+      "duration": 0.00555419921875,
+      "timestamp": "2025-07-14T03:36:00.128695"
+    }
+  ]
+}
