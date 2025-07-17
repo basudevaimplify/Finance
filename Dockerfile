@@ -7,17 +7,20 @@ WORKDIR /app
 # Copy package files first for better caching
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install all dependencies (including devDependencies for build)
+RUN npm ci
 
 # Copy application code
 COPY . .
 
-# Create uploads directory
-RUN mkdir -p uploads
+# Build the app (outputs to dist/)
+RUN npm run build
 
-# Set proper permissions
-RUN chmod -R 755 uploads
+# Remove devDependencies after build to keep image small
+RUN npm prune --production
+
+# Create uploads directory and set permissions
+RUN mkdir -p uploads && chmod -R 755 uploads
 
 # Expose port
 EXPOSE 5000
@@ -30,5 +33,5 @@ ENV PORT=5000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:5000/api/health || exit 1
 
-# Start application using development server (avoids build issues)
-CMD ["npm", "run", "dev"]
+# Start application using compiled JS
+CMD ["npm", "run", "start"]
