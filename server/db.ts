@@ -28,10 +28,12 @@ export const pool = new Pool({
   ssl: {
     rejectUnauthorized: false
   },
-  // Add connection pooling configuration
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  // Add connection pooling configuration with longer timeout for network issues
+  max: 10,
+  idleTimeoutMillis: 60000,
+  connectionTimeoutMillis: 10000,
+  // Add retry logic
+  acquireTimeoutMillis: 60000,
 });
 
 export const db = drizzle({ client: pool, schema });
