@@ -1122,6 +1122,190 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Download journal entries as CSV/Excel
+  app.get('/api/journal-entries/download', noAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.userId;
+      const { format = 'csv', period = '2025' } = req.query;
+      
+      // SECURITY: Get user's tenant_id for data isolation
+      const user = await storage.getUser(userId);
+      if (!user?.tenantId) {
+        return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
+      }
+      
+      // Get journal entries for the specified period and tenant
+      const journalEntries = await storage.getJournalEntriesByPeriod(period, user.tenantId);
+      
+      if (format === 'csv') {
+        // Generate CSV content
+        const csvHeader = 'Date,Account Code,Account Name,Description,Debit Amount,Credit Amount,Entity,Document\n';
+        const csvRows = journalEntries.map(entry => 
+          `${entry.date},${entry.accountCode},${entry.accountName},"${entry.description}",${entry.debitAmount || 0},${entry.creditAmount || 0},${entry.entity || ''},${entry.documentId || ''}`
+        ).join('\n');
+        const csvContent = csvHeader + csvRows;
+        
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="journal_entries_${period}.csv"`);
+        res.send(csvContent);
+      } else {
+        // Return JSON format for Excel processing
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="journal_entries_${period}.json"`);
+        res.json({
+          title: `Journal Entries - ${period}`,
+          period: period,
+          generated: new Date().toISOString(),
+          totalEntries: journalEntries.length,
+          entries: journalEntries
+        });
+      }
+    } catch (error) {
+      console.error("Error downloading journal entries:", error);
+      res.status(500).json({ message: "Failed to download journal entries: " + error.message });
+    }
+  });
+
+  // Download trial balance as CSV/Excel
+  app.get('/api/trial-balance/download', noAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.userId;
+      const { format = 'csv', period = '2025' } = req.query;
+      
+      // SECURITY: Get user's tenant_id for data isolation
+      const user = await storage.getUser(userId);
+      if (!user?.tenantId) {
+        return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
+      }
+      
+      // Get journal entries and generate trial balance
+      const journalEntries = await storage.getJournalEntriesByPeriod(period, user.tenantId);
+      const trialBalance = await financialReportsService.generateTrialBalance(journalEntries);
+      
+      if (format === 'csv') {
+        // Generate CSV content
+        const csvHeader = 'Account Code,Account Name,Debit Balance,Credit Balance,Entity\n';
+        const csvRows = trialBalance.entries.map((entry: any) => 
+          `${entry.accountCode},${entry.accountName},${entry.debitBalance || 0},${entry.creditBalance || 0},${entry.entity || ''}`
+        ).join('\n');
+        const csvContent = csvHeader + csvRows + `\n\nTotal Debits,${trialBalance.totalDebits}\nTotal Credits,${trialBalance.totalCredits}\nIs Balanced,${trialBalance.isBalanced}`;
+        
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="trial_balance_${period}.csv"`);
+        res.send(csvContent);
+      } else {
+        // Return JSON format
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="trial_balance_${period}.json"`);
+        res.json({
+          title: `Trial Balance - ${period}`,
+          period: period,
+          generated: new Date().toISOString(),
+          ...trialBalance
+        });
+      }
+    } catch (error) {
+      console.error("Error downloading trial balance:", error);
+      res.status(500).json({ message: "Failed to download trial balance: " + error.message });
+    }
+  });
+
+  // Download GSTR-2A as CSV/Excel
+  app.get('/api/gstr-2a/download', noAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.userId;
+      const { format = 'csv', period = '2025' } = req.query;
+      
+      // SECURITY: Get user's tenant_id for data isolation
+      const user = await storage.getUser(userId);
+      if (!user?.tenantId) {
+        return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
+      }
+      
+      // Get the latest GSTR-2A financial statement
+      const statements = await storage.getFinancialStatements(period, user.tenantId);
+      const gstr2aStatement = statements.find(s => s.statementType === 'gstr_2a');
+      
+      if (!gstr2aStatement) {
+        return res.status(404).json({ message: "GSTR-2A not found. Please generate it first." });
+      }
+      
+      const gstr2aData = gstr2aStatement.data;
+      
+      if (format === 'csv') {
+        // Generate CSV content for GSTR-2A
+        const csvHeader = 'GSTIN,Trade Name,Invoice Number,Invoice Date,Invoice Value,Taxable Value,IGST,CGST,SGST,Total Tax\n';
+        const csvRows = gstr2aData.invoices.map((inv: any) => 
+          `${inv.gstin || ''},${inv.tradeName || ''},${inv.invoiceNumber || ''},${inv.invoiceDate || ''},${inv.invoiceValue || 0},${inv.taxableValue || 0},${inv.igst || 0},${inv.cgst || 0},${inv.sgst || 0},${inv.totalTax || 0}`
+        ).join('\n');
+        const csvContent = csvHeader + csvRows + `\n\nSummary\nTotal Invoices,${gstr2aData.summary.totalInvoices}\nTotal Taxable Value,${gstr2aData.summary.totalTaxableValue}\nTotal Tax,${gstr2aData.summary.totalTax}`;
+        
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="gstr_2a_${period}.csv"`);
+        res.send(csvContent);
+      } else {
+        // Return JSON format
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="gstr_2a_${period}.json"`);
+        res.json({
+          title: `GSTR-2A - ${period}`,
+          period: period,
+          generated: new Date().toISOString(),
+          ...gstr2aData
+        });
+      }
+    } catch (error) {
+      console.error("Error downloading GSTR-2A:", error);
+      res.status(500).json({ message: "Failed to download GSTR-2A: " + error.message });
+    }
+  });
+
+  // Download GSTR-3B as CSV/Excel
+  app.get('/api/gstr-3b/download', noAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.userId;
+      const { format = 'csv', period = '2025' } = req.query;
+      
+      // SECURITY: Get user's tenant_id for data isolation
+      const user = await storage.getUser(userId);
+      if (!user?.tenantId) {
+        return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
+      }
+      
+      // Get the latest GSTR-3B financial statement
+      const statements = await storage.getFinancialStatements(period, user.tenantId);
+      const gstr3bStatement = statements.find(s => s.statementType === 'gstr_3b');
+      
+      if (!gstr3bStatement) {
+        return res.status(404).json({ message: "GSTR-3B not found. Please generate it first." });
+      }
+      
+      const gstr3bData = gstr3bStatement.data;
+      
+      if (format === 'csv') {
+        // Generate CSV content for GSTR-3B
+        const csvContent = `GSTR-3B Report - ${period}\n\nOutward Supplies\nTotal Value,${gstr3bData.outwardSupplies.totalValue}\nTaxable Value,${gstr3bData.outwardSupplies.taxableValue}\nGST Amount,${gstr3bData.outwardSupplies.gstAmount}\n\nInward Supplies\nTotal Value,${gstr3bData.inwardSupplies.totalValue}\nTaxable Value,${gstr3bData.inwardSupplies.taxableValue}\nGST Amount,${gstr3bData.inwardSupplies.gstAmount}\n\nNet Tax Liability,${gstr3bData.netTaxLiability}`;
+        
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="gstr_3b_${period}.csv"`);
+        res.send(csvContent);
+      } else {
+        // Return JSON format
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="gstr_3b_${period}.json"`);
+        res.json({
+          title: `GSTR-3B - ${period}`,
+          period: period,
+          generated: new Date().toISOString(),
+          ...gstr3bData
+        });
+      }
+    } catch (error) {
+      console.error("Error downloading GSTR-3B:", error);
+      res.status(500).json({ message: "Failed to download GSTR-3B: " + error.message });
+    }
+  });
+
   // Delete journal entry
   app.delete('/api/journal-entries/:id', simpleAuth, async (req: any, res) => {
     try {

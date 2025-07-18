@@ -260,20 +260,17 @@ export default function DocumentUpload() {
     try {
       let endpoint = '';
       switch (docId) {
-        case 'gstr_2a':
-          endpoint = '/api/reports/gstr-2a';
-          break;
-        case 'gstr_3b':
-          endpoint = '/api/reports/gstr-3b';
-          break;
-        case 'form_26q':
-          endpoint = '/api/reports/form-26q';
-          break;
-        case 'depreciation_schedule':
-          endpoint = '/api/reports/depreciation-schedule';
+        case 'journal_entries':
+          endpoint = '/api/journal-entries/download?format=csv&period=2025';
           break;
         case 'trial_balance':
-          endpoint = '/api/reports/trial-balance';
+          endpoint = '/api/trial-balance/download?format=csv&period=2025';
+          break;
+        case 'gstr_2a':
+          endpoint = '/api/gstr-2a/download?format=csv&period=2025';
+          break;
+        case 'gstr_3b':
+          endpoint = '/api/gstr-3b/download?format=csv&period=2025';
           break;
         case 'profit_loss_statement':
           endpoint = '/api/reports/profit-loss';
@@ -293,32 +290,69 @@ export default function DocumentUpload() {
         throw new Error('No authentication token found');
       }
       
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ period: 'Q3_2025' }),
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to download document');
+      // For download endpoints, use GET request and handle file download
+      if (endpoint.includes('/download')) {
+        const response = await fetch(endpoint, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          credentials: 'include',
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to download document');
+        }
+        
+        // Get the filename from Content-Disposition header
+        const contentDisposition = response.headers.get('content-disposition');
+        let filename = `${docName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+          if (filenameMatch) {
+            filename = filenameMatch[1];
+          }
+        }
+        
+        // Download the file
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } else {
+        // For other endpoints, use POST request and create JSON download
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ period: '2025' }),
+          credentials: 'include',
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to download document');
+        }
+        
+        const data = await response.json();
+        
+        // Create and download file
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${docName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
       }
-      
-      const data = await response.json();
-      
-      // Create and download file
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${docName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
       
       toast({
         title: "Download Complete",
