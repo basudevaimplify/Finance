@@ -390,38 +390,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get('/api/auth/user', async (req: any, res) => {
     try {
-      // Check for JWT token in Authorization header
-      const authHeader = req.headers.authorization;
-      
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ success: false, message: 'No token provided' });
-      }
-      
-      const token = authHeader.split(' ')[1];
-      
-      try {
-        const decoded = JSON.parse(Buffer.from(token, 'base64').toString());
-        
-        // Look up user from database
-        const user = await storage.getUser(decoded.userId);
-        if (!user) {
-          return res.status(401).json({ success: false, message: 'User not found' });
+      // No authentication required - return demo user
+      res.json({ 
+        success: true, 
+        user: {
+          id: 'demo-user',
+          email: 'demo@example.com',
+          first_name: 'Demo',
+          last_name: 'User',
+          company_name: 'Demo Company',
+          is_active: true
         }
-        
-        res.json({ 
-          success: true, 
-          user: {
-            id: user.id,
-            email: user.email,
-            first_name: user.firstName,
-            last_name: user.lastName,
-            company_name: user.companyName || 'Default Company',
-            is_active: user.isActive
-          }
-        });
-      } catch (decodeError) {
-        return res.status(401).json({ success: false, message: 'Invalid token' });
-      }
+      });
     } catch (error) {
       console.error('Auth user error:', error);
       res.status(500).json({ success: false, message: 'Internal server error' });

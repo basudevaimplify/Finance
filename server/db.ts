@@ -6,5 +6,10 @@ const DATABASE_URL = "postgresql://postgres:aimplify@1@db.gjikvgpngijuygehakzb.s
 
 console.log("DEBUG: DATABASE_URL =", DATABASE_URL);
 
-export const pool = new Pool({ connectionString: DATABASE_URL });
+export const pool = new Pool({ 
+  connectionString: DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 export const db = drizzle({ client: pool, schema });
