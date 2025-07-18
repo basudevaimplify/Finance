@@ -42,6 +42,7 @@ import { eq, desc, and, sql, count } from "drizzle-orm";
 export interface IStorage {
   // User operations (mandatory for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
+  getUserById(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   createUser(user: any): Promise<User>;
@@ -155,6 +156,10 @@ export class DatabaseStorage implements IStorage {
       console.error(`Storage: Error getting user ${id}:`, error);
       return undefined;
     }
+  }
+
+  async getUserById(id: string): Promise<User | undefined> {
+    return this.getUser(id);
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {

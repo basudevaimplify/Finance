@@ -598,8 +598,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // FALLBACK: Direct database query if ORM fails
           const { Pool } = await import('pg');
           const directPool = new Pool({
-            connectionString: 'postgresql://postgres.gjikvgpngijuygehakzb:aimplify@1@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true',
-            ssl: { rejectUnauthorized: false }
+            connectionString: process.env.DATABASE_URL,
+            ssl: false // Disable SSL for local PostgreSQL
           });
           
           const client = await directPool.connect();
@@ -935,12 +935,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteDocument(documentId);
       await fileProcessorService.deleteFile(document.filePath);
 
+      // Get user's tenant for audit trail
+      const user = await storage.getUserById(userId);
+      if (!user?.tenantId) {
+        console.warn(`User ${userId} has no tenant assignment for audit trail`);
+      }
+
       // Log audit trail
       await storage.createAuditTrail({
         action: 'document_deleted',
         entityType: 'document',
         entityId: documentId,
         userId,
+        tenantId: user?.tenantId || null,
         details: { fileName: document.originalName },
       });
 
