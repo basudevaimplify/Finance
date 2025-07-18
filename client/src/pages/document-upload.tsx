@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { apiRequest } from "@/lib/queryClient";
 import PageLayout from "@/components/layout/PageLayout";
 import FileDropzone from "@/components/file-upload/file-dropzone";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { FileText, Download, Trash2, Eye, CheckCircle, XCircle, AlertCircle, Calendar, FileIcon, Upload, HelpCircle, Edit, Cog, Calculator, RefreshCw } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import type { Document } from "@shared/schema";
@@ -37,6 +39,7 @@ interface DocumentRequirement {
 export default function DocumentUpload() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<string>('requirements');
 
@@ -191,13 +194,61 @@ export default function DocumentUpload() {
     // TODO: Implement edit logic
   };
 
+  // Delete mutation for actual uploaded documents
+  const deleteMutation = useMutation({
+    mutationFn: async (documentId: string) => {
+      const response = await fetch(`/api/documents/${documentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer demo-token`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete document');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Document deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+      // Force a refetch to ensure immediate UI update
+      refetchDocuments();
+    },
+    onError: (error) => {
+      console.error("Document deletion error:", error);
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: `Failed to delete document: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleDelete = (docId: string, docName: string) => {
     toast({
       title: "Delete Document",
       description: `Are you sure you want to delete ${docName}?`,
       variant: "destructive",
     });
-    // TODO: Implement delete logic
+    // TODO: Implement delete logic for document requirements (not actual uploaded docs)
   };
 
   const handleDownload = async (docId: string, docName: string) => {
@@ -319,8 +370,6 @@ export default function DocumentUpload() {
     retry: false,
   });
 
-  const queryClient = useQueryClient();
-
   // Helper functions for display
   const getDocumentTypeDisplay = (type: string) => {
     const typeMap: Record<string, string> = {
@@ -350,7 +399,6 @@ export default function DocumentUpload() {
 
   // Force refresh function to ensure consistency across all modules
   const handleRefreshDocuments = () => {
-    queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
     refetchDocuments();
     toast({
       title: "Refreshing Documents",
@@ -1210,15 +1258,37 @@ export default function DocumentUpload() {
                             </TableCell>
                             <TableCell className="table-cell">
                               <div className="flex items-center space-x-2">
-                                <Button variant="ghost" size="sm">
+                                <Button variant="ghost" size="sm" onClick={() => window.open(`/uploads/${doc.filePath}`, '_blank')}>
                                   <Eye className="h-4 w-4" />
                                 </Button>
-                                <Button variant="ghost" size="sm">
+                                <Button variant="ghost" size="sm" onClick={() => window.open(`/uploads/${doc.filePath}`, '_blank')}>
                                   <Download className="h-4 w-4" />
                                 </Button>
-                                <Button variant="ghost" size="sm" className="text-destructive">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="text-destructive">
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to delete "{doc.originalName}"? This action cannot be undone and will also remove any associated journal entries.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => deleteMutation.mutate(doc.id)}
+                                        className="bg-red-600 hover:bg-red-700"
+                                        disabled={deleteMutation.isPending}
+                                      >
+                                        {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               </div>
                             </TableCell>
                           </TableRow>
