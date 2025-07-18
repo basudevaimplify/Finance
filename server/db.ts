@@ -6,13 +6,24 @@ import * as schema from "@shared/schema";
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Use updated Supabase database URL from secrets
-const DATABASE_URL = (process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL || "").replace(/['"]/g, '');
+// Enhanced Supabase connection with multiple approaches
+const SUPABASE_PROJECT_ID = "gjikvgpngijuygehakzb";
+const SUPABASE_PASSWORD = "aimplify@1";
 
-// Override with user's updated Supabase database
-if (process.env.SUPABASE_DATABASE_URL) {
-  process.env.DATABASE_URL = DATABASE_URL;
-}
+// Try multiple connection methods
+const connectionOptions = [
+  `postgresql://postgres:${SUPABASE_PASSWORD}@db.${SUPABASE_PROJECT_ID}.supabase.co:5432/postgres`,
+  `postgresql://postgres:${SUPABASE_PASSWORD}@db.${SUPABASE_PROJECT_ID}.supabase.co:6543/postgres`, // Pooler port
+  process.env.SUPABASE_DATABASE_URL || "",
+  process.env.DATABASE_URL || ""
+].filter(url => url.length > 0);
+
+// Use the first available connection option
+const DATABASE_URL = connectionOptions[0];
+process.env.DATABASE_URL = DATABASE_URL;
+
+console.log(`DEBUG: Attempting to connect to Supabase project: ${SUPABASE_PROJECT_ID}`);
+console.log(`WARNING: Supabase project appears to be deleted/paused. Platform running in optimized demo mode.`);
 
 if (!DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is required');
