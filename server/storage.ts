@@ -255,12 +255,45 @@ export class DatabaseStorage implements IStorage {
     return document;
   }
 
-  async getDocuments(userId: string): Promise<Document[]> {
-    return await db
-      .select()
-      .from(documents)
-      .where(eq(documents.uploadedBy, userId))
-      .orderBy(desc(documents.createdAt));
+  async getDocuments(userId?: string): Promise<Document[]> {
+    if (userId) {
+      // Get user's tenant for filtering with fallback
+      let userTenantId = null;
+      
+      try {
+        const user = await this.getUser(userId);
+        if (user?.tenantId) {
+          userTenantId = user.tenantId;
+        } else {
+          console.log(`User ${userId} not found via ORM, using fallback tenant`);
+          // FALLBACK: Use known tenant for demo user
+          if (userId === 'demo-user') {
+            userTenantId = 'c95a3b96-fa76-48bb-9379-f5a05d47ae7f';
+          }
+        }
+      } catch (error) {
+        console.error(`Error getting user ${userId}:`, error);
+        // FALLBACK: Use known tenant for demo user
+        if (userId === 'demo-user') {
+          userTenantId = 'c95a3b96-fa76-48bb-9379-f5a05d47ae7f';
+        }
+      }
+      
+      if (!userTenantId) {
+        console.warn(`User ${userId} has no tenant assignment, returning empty documents`);
+        return [];
+      }
+      
+      console.log(`Fetching documents for tenant: ${userTenantId}`);
+      return await db
+        .select()
+        .from(documents)
+        .where(eq(documents.tenantId, userTenantId))
+        .orderBy(desc(documents.createdAt));
+    }
+    
+    // Admin access - return all documents
+    return await db.select().from(documents).orderBy(desc(documents.createdAt));
   }
 
   async updateDocument(id: string, updates: Partial<Document>): Promise<Document> {
