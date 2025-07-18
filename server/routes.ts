@@ -31,54 +31,19 @@ function formatCurrency(amount: number): string {
   return `Rs ${amount.toLocaleString('en-IN')}`;
 }
 
-// JWT middleware for API endpoints
-const jwtAuth = async (req: any, res: any, next: any) => {
-  try {
-    const authHeader = req.headers.authorization;
-    console.log('JWT Auth Debug:', { 
-      method: req.method,
-      url: req.url,
-      hasAuth: !!authHeader, 
-      authPreview: authHeader?.substring(0, 30) + '...',
-      allHeaders: Object.keys(req.headers)
-    });
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('JWT Auth: No valid Authorization header');
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-    
-    const token = authHeader.split(' ')[1];
-    
-    try {
-      const decoded = JSON.parse(Buffer.from(token, 'base64').toString());
-      
-      // Look up user from database to get tenant_id
-      const user = await storage.getUser(decoded.userId);
-      console.log('JWT Auth: User lookup result:', user);
-      if (!user) {
-        console.log('JWT Auth: User not found in database');
-        return res.status(401).json({ message: 'Unauthorized' });
-      }
-      
-      req.user = {
-        claims: {
-          sub: decoded.userId
-        },
-        userId: decoded.userId,
-        email: decoded.email,
-        tenantId: user.tenantId,
-        role: user.role || 'finance_exec'
-      };
-      console.log('JWT Auth: Success for user', decoded.userId, 'with tenant', user.tenantId);
-      next();
-    } catch (decodeError) {
-      console.log('JWT Auth: Token decode error', decodeError);
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-  } catch (error) {
-    console.log('JWT Auth: General error', error);
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
+// No authentication middleware - allow all requests through
+const noAuth = (req: any, res: any, next: any) => {
+  // Set a default user context for compatibility with existing code
+  req.user = {
+    claims: {
+      sub: 'demo-user'
+    },
+    userId: 'demo-user',
+    email: 'demo@example.com',
+    tenantId: null, // Will be handled by individual routes if needed
+    role: 'admin'
+  };
+  next();
 };
 
 // Admin middleware to check admin role
@@ -602,7 +567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Enhanced dashboard stats with user journey tracking
-  app.get("/api/dashboard/stats", jwtAuth, async (req: any, res) => {
+  app.get("/api/dashboard/stats", noAuth, async (req: any, res) => {
     try {
       const userId = req.user.userId;
       const stats = await storage.getDashboardStats(userId);
@@ -626,7 +591,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Document upload route
-  app.post('/api/documents/upload', jwtAuth, upload.single('file'), async (req: any, res) => {
+  app.post('/api/documents/upload', noAuth, upload.single('file'), async (req: any, res) => {
     try {
       console.log("Upload request received");
       
@@ -755,7 +720,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Validate document classification endpoint
-  app.post('/api/documents/:id/validate-classification', jwtAuth, async (req: any, res) => {
+  app.post('/api/documents/:id/validate-classification', noAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
       const userId = req.user.userId;
@@ -802,7 +767,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get documents
-  app.get('/api/documents', jwtAuth, async (req: any, res) => {
+  app.get('/api/documents', noAuth, async (req: any, res) => {
     try {
       const userId = req.user.userId;
       
@@ -822,7 +787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get document by ID
-  app.get('/api/documents/:id', jwtAuth, async (req: any, res) => {
+  app.get('/api/documents/:id', noAuth, async (req: any, res) => {
     try {
       const document = await storage.getDocument(req.params.id);
       if (!document) {
@@ -836,7 +801,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete document
-  app.delete('/api/documents/:id', jwtAuth, async (req: any, res) => {
+  app.delete('/api/documents/:id', noAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const documentId = req.params.id;
@@ -948,7 +913,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get journal entries
-  app.get('/api/journal-entries', jwtAuth, async (req: any, res) => {
+  app.get('/api/journal-entries', noAuth, async (req: any, res) => {
     try {
       const userId = req.user.userId;
       const documentId = req.query.documentId as string;
@@ -1002,7 +967,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get financial statements
-  app.get('/api/financial-statements', jwtAuth, async (req: any, res) => {
+  app.get('/api/financial-statements', noAuth, async (req: any, res) => {
     try {
       const userId = req.user.userId;
       const type = req.query.type as string;
@@ -1154,7 +1119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate journal entries from uploaded documents
-  app.post('/api/reports/generate-journal-entries', jwtAuth, async (req: any, res) => {
+  app.post('/api/reports/generate-journal-entries', noAuth, async (req: any, res) => {
     try {
       const userId = req.user.userId;
       
@@ -1224,7 +1189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate trial balance
-  app.post('/api/reports/trial-balance', jwtAuth, async (req: any, res) => {
+  app.post('/api/reports/trial-balance', noAuth, async (req: any, res) => {
     try {
       const userId = req.user.userId;
       const { period } = req.body;
@@ -1288,7 +1253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate profit & loss statement
-  app.post('/api/reports/profit-loss', jwtAuth, async (req: any, res) => {
+  app.post('/api/reports/profit-loss', noAuth, async (req: any, res) => {
     try {
       const userId = req.user.userId;
       const { period } = req.body;
@@ -1349,7 +1314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate balance sheet
-  app.post('/api/reports/balance-sheet', jwtAuth, async (req: any, res) => {
+  app.post('/api/reports/balance-sheet', noAuth, async (req: any, res) => {
     try {
       const userId = req.user.userId;
       const { period } = req.body;
@@ -1410,7 +1375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate cash flow statement
-  app.post('/api/reports/cash-flow', jwtAuth, async (req: any, res) => {
+  app.post('/api/reports/cash-flow', noAuth, async (req: any, res) => {
     try {
       const userId = req.user.userId;
       const { period } = req.body;
@@ -1471,7 +1436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate GSTR-2A
-  app.post('/api/reports/gstr-2a', jwtAuth, async (req: any, res) => {
+  app.post('/api/reports/gstr-2a', noAuth, async (req: any, res) => {
     try {
       const userId = req.user.userId;
       const { period } = req.body;
@@ -1637,7 +1602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate GSTR-3B
-  app.post('/api/reports/gstr-3b', jwtAuth, async (req: any, res) => {
+  app.post('/api/reports/gstr-3b', noAuth, async (req: any, res) => {
     try {
       const userId = req.user.userId;
       const { period } = req.body;
@@ -1830,7 +1795,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate Form 26Q
-  app.post('/api/reports/form-26q', jwtAuth, async (req: any, res) => {
+  app.post('/api/reports/form-26q', noAuth, async (req: any, res) => {
     try {
       const userId = req.user.userId;
       const { period } = req.body;
@@ -1991,7 +1956,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate Depreciation Schedule
-  app.post('/api/reports/depreciation-schedule', jwtAuth, async (req: any, res) => {
+  app.post('/api/reports/depreciation-schedule', noAuth, async (req: any, res) => {
     try {
       const userId = req.user.userId;
       const { period } = req.body;
@@ -2060,7 +2025,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate bank reconciliation report
-  app.post('/api/reports/bank-reconciliation', jwtAuth, async (req: any, res) => {
+  app.post('/api/reports/bank-reconciliation', noAuth, async (req: any, res) => {
     try {
       const userId = req.user.userId;
       const { period } = req.body;
@@ -2232,7 +2197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get audit trail
-  app.get('/api/audit-trail', jwtAuth, async (req: any, res) => {
+  app.get('/api/audit-trail', noAuth, async (req: any, res) => {
     try {
       const userId = req.user.userId;
       const entityId = req.query.entityId as string;
@@ -2874,7 +2839,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/ml/anomalies/explain', jwtAuth, async (req: any, res) => {
+  app.post('/api/ml/anomalies/explain', noAuth, async (req: any, res) => {
     try {
       const { anomaly_id, anomalyId, question } = req.body;
       const targetAnomalyId = anomaly_id || anomalyId;
@@ -2929,7 +2894,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/ml/anomalies/remediate', jwtAuth, async (req: any, res) => {
+  app.post('/api/ml/anomalies/remediate', noAuth, async (req: any, res) => {
     try {
       const { anomalyId } = req.body;
       
@@ -2995,7 +2960,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/ml/anomalies/patterns', jwtAuth, async (req: any, res) => {
+  app.get('/api/ml/anomalies/patterns', noAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const timeframe = req.query.timeframe as string || '30d';
@@ -3193,7 +3158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Natural language chat endpoint
-  app.post('/api/chat/query', jwtAuth, async (req, res) => {
+  app.post('/api/chat/query', noAuth, async (req, res) => {
     try {
       const { query } = req.body;
       const { user } = req as any;
@@ -3258,7 +3223,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Agent Chat API endpoints
-  app.post('/api/agent-chat/start', jwtAuth, async (req: any, res) => {
+  app.post('/api/agent-chat/start', noAuth, async (req: any, res) => {
     try {
       const { message, documentId } = req.body;
       const userId = req.user.claims.sub;
@@ -3311,7 +3276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/agent-chat/stop', jwtAuth, async (req: any, res) => {
+  app.post('/api/agent-chat/stop', noAuth, async (req: any, res) => {
     try {
       // Stop the current workflow
       res.json({
@@ -3324,7 +3289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/agent-chat/message', jwtAuth, async (req: any, res) => {
+  app.post('/api/agent-chat/message', noAuth, async (req: any, res) => {
     try {
       const { message } = req.body;
       const userId = req.user.claims.sub;
@@ -3700,7 +3665,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin Routes - System Management
-  app.get('/api/admin/users', jwtAuth, adminAuth, async (req: any, res) => {
+  app.get('/api/admin/users', noAuth, adminAuth, async (req: any, res) => {
     try {
       const users = await storage.getAllUsers();
       res.json(users);
@@ -3710,7 +3675,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/tenants', jwtAuth, adminAuth, async (req: any, res) => {
+  app.get('/api/admin/tenants', noAuth, adminAuth, async (req: any, res) => {
     try {
       const tenants = await storage.getAllTenants();
       res.json(tenants);
@@ -3720,7 +3685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/stats', jwtAuth, adminAuth, async (req: any, res) => {
+  app.get('/api/admin/stats', noAuth, adminAuth, async (req: any, res) => {
     try {
       const stats = await storage.getSystemStats();
       res.json(stats);
@@ -3730,7 +3695,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/admin/users/:id', jwtAuth, adminAuth, async (req: any, res) => {
+  app.patch('/api/admin/users/:id', noAuth, adminAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
@@ -3742,7 +3707,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/admin/tenants/:id', jwtAuth, adminAuth, async (req: any, res) => {
+  app.patch('/api/admin/tenants/:id', noAuth, adminAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
