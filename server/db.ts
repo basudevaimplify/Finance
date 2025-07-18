@@ -6,14 +6,12 @@ import * as schema from "@shared/schema";
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Use Supabase database as requested by user
-const DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres:aimplify@1@db.gjikvgpngijuygehakzb.supabase.co:5432/postgres";
+// Use updated Supabase database URL from secrets
+const DATABASE_URL = (process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL || "").replace(/['"]/g, '');
 
-// Override with user's specific Supabase database
-if (!process.env.DATABASE_URL?.includes('supabase')) {
-  // User specifically requested Supabase database
-  const supabaseUrl = "postgresql://postgres:aimplify@1@db.gjikvgpngijuygehakzb.supabase.co:5432/postgres";
-  process.env.DATABASE_URL = supabaseUrl;
+// Override with user's updated Supabase database
+if (process.env.SUPABASE_DATABASE_URL) {
+  process.env.DATABASE_URL = DATABASE_URL;
 }
 
 if (!DATABASE_URL) {
