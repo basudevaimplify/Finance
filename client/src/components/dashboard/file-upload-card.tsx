@@ -29,8 +29,10 @@ export default function FileUploadCard() {
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await apiRequest('POST', '/api/documents/upload', formData);
-      return response.json();
+      return await apiRequest('/api/documents/upload', { 
+        method: 'POST', 
+        body: formData 
+      });
     },
     onSuccess: () => {
       toast({
