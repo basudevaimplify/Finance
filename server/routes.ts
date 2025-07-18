@@ -603,22 +603,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           
           const client = await directPool.connect();
+          
+          // First ensure tenant and user exist in database
+          if (userId === 'demo-user') {
+            // First ensure tenant exists
+            await client.query(`
+              INSERT INTO tenants (id, company_name, subscription_plan, is_active, created_at, updated_at)
+              VALUES ($1, $2, $3, $4, NOW(), NOW())
+              ON CONFLICT (id) DO NOTHING
+            `, ['c95a3b96-fa76-48bb-9379-f5a05d47ae7f', 'Demo Company', 'enterprise', true]);
+            
+            // Then ensure user exists
+            await client.query(`
+              INSERT INTO users (id, email, tenant_id, first_name, last_name, is_active, created_at, updated_at)
+              VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+              ON CONFLICT (id) DO NOTHING
+            `, [userId, 'demo@example.com', 'c95a3b96-fa76-48bb-9379-f5a05d47ae7f', 'Demo', 'User', true]);
+          }
+          
           const result = await client.query('SELECT id, email, tenant_id FROM users WHERE id = $1', [userId]);
           client.release();
           directPool.end();
           
           if (result.rows.length > 0) {
-            console.log(`Upload: Found user via direct query:`, result.rows[0]);
+            console.log(`Upload: User ensured and found:`, result.rows[0]);
             tenantId = result.rows[0].tenant_id;
           } else {
-            console.error(`User ${userId} not found in database`);
-            // FINAL FALLBACK: Use known tenant ID for demo user
-            if (userId === 'demo-user') {
-              console.log('Using hardcoded tenant for demo user');
-              tenantId = 'c95a3b96-fa76-48bb-9379-f5a05d47ae7f';
-            } else {
-              return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
-            }
+            console.error(`User ${userId} not found in database even after insert attempt`);
+            return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
           }
         } else {
           tenantId = user.tenantId;
@@ -745,21 +757,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log("Document saved via direct database insert:", documentId);
         } catch (directError) {
           console.error("Direct database insert also failed:", directError.message);
-          // Final fallback - create mock record for response
-          const { v4: uuidv4 } = await import('uuid');
-          document = {
-            id: uuidv4(),
-            fileName,
-            originalName: file.originalname,
-            mimeType: file.mimetype,
-            fileSize: file.size,
-            filePath: filePath,
-            uploadedBy: userId,
-            status: 'classified',
-            documentType: contentAnalysis.documentType,
-            tenantId: tenantId,
-            createdAt: new Date()
-          };
+          console.error("Direct database error details:", directError);
+          
+          // **CRITICAL**: Database storage is failing, but we need to fix this
+          // For now, return error instead of fake success
+          throw new Error(`Database storage failed: ${directError.message}`);
         }
       }
       console.log("Document created with content-based classification:", document.id);
