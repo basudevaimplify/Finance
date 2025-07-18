@@ -696,24 +696,42 @@ export default function DocumentUpload() {
     }
     ];
 
-    // Update document requirements based on uploaded documents
+    // Update document requirements based on REAL-TIME uploaded documents from database
     return baseRequirements.map(req => {
       const matchingDocs = documents?.filter(doc => {
         const docType = doc.documentType?.toLowerCase();
+        const docName = doc.originalName?.toLowerCase() || '';
         const reqId = req.id.toLowerCase();
-        return docType === reqId || docType === reqId.replace('_', '') || 
-               (docType === 'gst' && reqId.includes('gstr')) ||
-               (docType === 'tds' && reqId.includes('tds')) ||
-               (docType === 'journal' && reqId.includes('journal')) ||
-               (docType === 'bank_statement' && reqId.includes('bank')) ||
-               (docType === 'purchase_register' && reqId.includes('purchase')) ||
-               (docType === 'sales_register' && reqId.includes('sales'));
+        
+        // Enhanced matching logic for better real-time document detection
+        switch (req.id) {
+          case 'vendor_invoices':
+            return docType === 'vendor_invoice' || docName.includes('invoice') || docName.includes('vendor');
+          case 'purchase_register':
+            return docType === 'purchase_register' || docName.includes('purchase_register');
+          case 'sales_register':
+            return docType === 'sales_register' || docName.includes('sales_register');
+          case 'tds_certificates':
+            return docType === 'tds' || docName.includes('tds') || docName.includes('certificate');
+          case 'bank_statements':
+            return docType === 'bank_statement' || docName.includes('bank') || docName.includes('statement');
+          case 'fixed_asset_register':
+            return docType === 'fixed_assets' || docName.includes('asset') || docName.includes('fixed');
+          case 'salary_register':
+            return docType === 'salary_register' || docName.includes('salary') || docName.includes('payroll');
+          case 'directors_report':
+            return docType === 'directors_report' || docName.includes('director');
+          case 'auditor_report':
+            return docType === 'auditor_report' || docName.includes('auditor');
+          default:
+            return docType === reqId || docType === reqId.replace('_', '');
+        }
       }) || [];
 
       return {
         ...req,
         isUploaded: matchingDocs.length > 0,
-        uploadedFiles: matchingDocs.map(doc => doc.originalName)
+        uploadedFiles: matchingDocs.map(doc => `${doc.originalName} (${doc.status})`)
       };
     });
   };

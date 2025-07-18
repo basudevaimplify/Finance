@@ -867,16 +867,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/documents', noAuth, async (req: any, res) => {
     try {
       const userId = req.user.userId;
+      console.log(`GET /api/documents for user: ${userId}`);
       
-      // DEMO MODE: Handle database connectivity issues gracefully
+      // FIXED: Use proper storage method that handles tenant lookup internally
       let documents = [];
       try {
-        const user = await storage.getUser(userId);
-        if (user?.tenantId) {
-          documents = await storage.getDocuments(user.tenantId);
-        } else {
-          // User not found, trigger fallback mode
-          throw new Error('User not found in database');
+        documents = await storage.getDocuments(userId);
+        console.log(`Found ${documents.length} documents for user ${userId}`);
+        
+        if (documents.length === 0) {
+          console.log(`No documents found for user ${userId}, checking user status...`);
+          const user = await storage.getUser(userId);
+          if (user) {
+            console.log(`User ${userId} exists with tenant ${user.tenantId}, but no documents found`);
+          } else {
+            console.log(`User ${userId} not found in database`);
+          }
         }
       } catch (dbError) {
         console.warn(`Database connection issue, using demo mode: ${dbError.message}`);

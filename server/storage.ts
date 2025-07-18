@@ -271,11 +271,13 @@ export class DatabaseStorage implements IStorage {
         const user = await this.getUser(userId);
         if (user?.tenantId) {
           userTenantId = user.tenantId;
+          console.log(`Found user ${userId} with tenant: ${userTenantId}`);
         } else {
           console.log(`User ${userId} not found via ORM, using fallback tenant`);
           // FALLBACK: Use known tenant for demo user
           if (userId === 'demo-user') {
             userTenantId = 'c95a3b96-fa76-48bb-9379-f5a05d47ae7f';
+            console.log(`Using fallback tenant for demo-user: ${userTenantId}`);
           }
         }
       } catch (error) {
