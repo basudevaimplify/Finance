@@ -583,20 +583,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const userId = req.user.userId;
       
-      // DEMO MODE: Skip user validation for demo environment due to DNS issues
-      let user = null;
-      let tenantId = 'demo-tenant-001';
-      
-      try {
-        user = await storage.getUser(userId);
-        if (user?.tenantId) {
-          tenantId = user.tenantId;
-        }
-      } catch (error) {
-        console.warn(`Database connection issue, using demo mode: ${error.message}`);
-        // Continue with demo tenant for upload functionality
-        user = { tenantId: 'demo-tenant-001' };
+      // Get user and tenant from database
+      const user = await storage.getUser(userId);
+      if (!user || !user.tenantId) {
+        console.error(`User ${userId} not found or missing tenant assignment`);
+        return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
       }
+      
+      const tenantId = user.tenantId;
 
       const file = req.file;
       const fileName = `${nanoid()}_${file.originalname}`;
@@ -606,7 +600,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         mimetype: file.mimetype,
         size: file.size,
         userId,
-        tenantId: user.tenantId
+        tenantId: tenantId
       });
 
       // Simple extension validation only
