@@ -319,8 +319,23 @@ export default function DocumentUpload() {
     retry: false,
   });
 
-  // Define comprehensive document requirements
-  const documentRequirements: DocumentRequirement[] = [
+  // Helper function to map document types to requirement IDs
+  const mapDocumentTypeToRequirementId = (documentType: string): string => {
+    const mapping: Record<string, string> = {
+      'vendor_invoice': 'vendor_invoices',
+      'purchase_register': 'purchase_register', 
+      'sales_register': 'sales_register',
+      'tds': 'tds_certificates',
+      'bank_statement': 'bank_statements',
+      'salary_register': 'salary_register',
+      'fixed_assets': 'fixed_asset_register'
+    };
+    return mapping[documentType] || 'vendor_invoices';
+  };
+
+  // Define comprehensive document requirements and update with uploaded documents
+  const getDocumentRequirements = (): DocumentRequirement[] => {
+    const baseRequirements: DocumentRequirement[] = [
     // PRIMARY DOCUMENTS - Must be uploaded
     {
       id: 'vendor_invoices',
@@ -640,26 +655,34 @@ export default function DocumentUpload() {
       derivedFrom: ['fixed_asset_register'],
       canGenerate: true
     }
-  ];
+    ];
 
-  // Update document requirements based on uploaded documents
-  const updatedRequirements = documentRequirements.map(req => {
-    const matchingDocs = documents?.filter(doc => {
-      const docType = doc.documentType?.toLowerCase();
-      const reqId = req.id.toLowerCase();
-      return docType === reqId || docType === reqId.replace('_', '') || 
-             (docType === 'gst' && reqId.includes('gstr')) ||
-             (docType === 'tds' && reqId.includes('tds')) ||
-             (docType === 'journal' && reqId.includes('journal')) ||
-             (docType === 'bank_statement' && reqId.includes('bank'));
-    }) || [];
+    // Update document requirements based on uploaded documents
+    return baseRequirements.map(req => {
+      const matchingDocs = documents?.filter(doc => {
+        const docType = doc.documentType?.toLowerCase();
+        const reqId = req.id.toLowerCase();
+        return docType === reqId || docType === reqId.replace('_', '') || 
+               (docType === 'gst' && reqId.includes('gstr')) ||
+               (docType === 'tds' && reqId.includes('tds')) ||
+               (docType === 'journal' && reqId.includes('journal')) ||
+               (docType === 'bank_statement' && reqId.includes('bank')) ||
+               (docType === 'purchase_register' && reqId.includes('purchase')) ||
+               (docType === 'sales_register' && reqId.includes('sales'));
+      }) || [];
 
-    return {
-      ...req,
-      isUploaded: matchingDocs.length > 0,
-      uploadedFiles: matchingDocs.map(doc => doc.originalName)
-    };
-  });
+      return {
+        ...req,
+        isUploaded: matchingDocs.length > 0,
+        uploadedFiles: matchingDocs.map(doc => doc.originalName)
+      };
+    });
+  };
+
+  const documentRequirements = getDocumentRequirements();
+
+  // Use the updated requirements from the function
+  const updatedRequirements = documentRequirements;
 
   // Calculate completion statistics (only for primary documents that must be uploaded)
   const totalRequired = updatedRequirements.filter(req => req.documentType === 'primary' && req.isRequired).length;
