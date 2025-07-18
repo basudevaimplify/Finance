@@ -1059,6 +1059,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate journal entries endpoint (alias for the existing generate-journal-entries)
+  app.post('/api/journal-entries/generate', noAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.userId;
+      const { documentIds } = req.body;
+      
+      console.log(`Journal Entries Generation Request: ${JSON.stringify({ userId, documentIds })}`);
+      
+      // SECURITY: Get user's tenant_id for data isolation
+      const user = await storage.getUser(userId);
+      if (!user?.tenantId) {
+        console.error(`Security violation: User ${userId} attempted to generate journal entries without tenant assignment`);
+        return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
+      }
+      
+      // Get documents for this tenant
+      const documents = await storage.getDocuments(userId);
+      console.log(`Found ${documents.length} documents for user ${userId}`);
+      
+      let processedDocuments = 0;
+      let skippedDocuments = 0;
+      const createdEntries = [];
+      
+      for (const doc of documents) {
+        // Check if document already has journal entries (duplication prevention)
+        const existingEntries = await storage.getJournalEntries(doc.id, user.tenantId);
+        if (existingEntries.length > 0) {
+          console.log(`Skipping document ${doc.id} - already has ${existingEntries.length} journal entries`);
+          skippedDocuments++;
+          continue;
+        }
+        
+        // Generate journal entries using LangGraph orchestrator
+        const defaultEntries = langGraphOrchestrator.generateDefaultJournalEntries(doc, doc.extractedData);
+        
+        for (const entry of defaultEntries) {
+          const journalEntry = await storage.createJournalEntry({
+            ...entry,
+            tenantId: user.tenantId
+          });
+          createdEntries.push(journalEntry);
+        }
+        
+        processedDocuments++;
+      }
+      
+      console.log(`Journal entry generation completed: ${processedDocuments} documents processed, ${skippedDocuments} skipped, ${createdEntries.length} entries created`);
+      
+      res.json({
+        message: processedDocuments > 0 
+          ? `Successfully generated ${createdEntries.length} journal entries from ${processedDocuments} documents`
+          : `No new journal entries generated. ${skippedDocuments} documents already have journal entries`,
+        processedDocuments,
+        skippedDocuments,
+        createdEntries: createdEntries.length,
+        entries: createdEntries
+      });
+    } catch (error) {
+      console.error("Error generating journal entries:", error);
+      res.status(500).json({ message: "Failed to generate journal entries: " + error.message });
+    }
+  });
+
   // Delete journal entry
   app.delete('/api/journal-entries/:id', simpleAuth, async (req: any, res) => {
     try {
@@ -1302,6 +1365,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating journal entries:", error);
       res.status(500).json({ message: "Failed to generate journal entries" });
+    }
+  });
+
+  // Generate trial balance (alias endpoint)
+  app.post('/api/trial-balance/generate', noAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.userId;
+      const { period } = req.body;
+      
+      console.log(`Trial Balance Generation Request: ${JSON.stringify({ userId, period })}`);
+      
+      // SECURITY: Get user's tenant_id for data isolation
+      const user = await storage.getUser(userId);
+      if (!user?.tenantId) {
+        return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
+      }
+      
+      // Get journal entries for the specified period and tenant
+      const journalEntries = await storage.getJournalEntriesByPeriod(period || '2025', user.tenantId);
+      
+      // Generate trial balance from journal entries
+      const trialBalance = await financialReportsService.generateTrialBalance(journalEntries);
+      
+      // Save as financial statement
+      await storage.createFinancialStatement({
+        statementType: 'trial_balance',
+        period: period || '2025',
+        data: trialBalance,
+        isValid: trialBalance.isBalanced,
+        generatedBy: userId,
+        tenantId: user.tenantId,
+      });
+      
+      res.json({
+        message: "Trial balance generated successfully",
+        data: trialBalance
+      });
+    } catch (error) {
+      console.error("Error generating trial balance:", error);
+      res.status(500).json({ message: "Failed to generate trial balance: " + error.message });
     }
   });
 
@@ -1552,6 +1655,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate GSTR-2A (alias endpoint)
+  app.post('/api/gstr-2a/generate', noAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.userId;
+      const { period } = req.body;
+      
+      console.log(`GSTR-2A Generation Request: ${JSON.stringify({ userId, period })}`);
+      
+      // SECURITY: Get user's tenant_id for data isolation
+      const user = await storage.getUser(userId);
+      if (!user?.tenantId) {
+        return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
+      }
+      
+      // Get purchase documents for GSTR-2A generation
+      const documents = await storage.getDocuments(userId);
+      const purchaseDocuments = documents.filter(doc => 
+        doc.documentType === 'purchase_register' || doc.documentType === 'vendor_invoice'
+      );
+      
+      // Extract vendor data from purchase documents
+      let extractedVendorData = [];
+      for (const doc of purchaseDocuments) {
+        if (doc.extractedData && doc.extractedData.invoices) {
+          extractedVendorData = extractedVendorData.concat(doc.extractedData.invoices);
+        }
+      }
+      
+      // Calculate totals
+      const totalTaxableValue = extractedVendorData.reduce((sum, inv) => sum + (inv.taxableValue || 0), 0);
+      const totalTax = extractedVendorData.reduce((sum, inv) => sum + (inv.totalTax || 0), 0);
+      
+      const gstr2a = {
+        period: period || '2025',
+        gstin: 'GSTIN1234567890',
+        totalInwardSupplies: totalTaxableValue,
+        totalTaxCredit: totalTax,
+        invoices: extractedVendorData,
+        summary: {
+          totalInvoices: extractedVendorData.length,
+          totalTaxableValue: totalTaxableValue,
+          totalTax: totalTax
+        }
+      };
+      
+      // Save the report
+      await storage.createFinancialStatement({
+        statementType: 'gstr_2a',
+        period: period || '2025',
+        data: gstr2a,
+        isValid: true,
+        generatedBy: userId,
+        tenantId: user.tenantId,
+      });
+      
+      res.json({
+        message: "GSTR-2A generated successfully",
+        data: gstr2a
+      });
+    } catch (error) {
+      console.error("Error generating GSTR-2A:", error);
+      res.status(500).json({ message: "Failed to generate GSTR-2A: " + error.message });
+    }
+  });
+
   // Generate GSTR-2A
   app.post('/api/reports/gstr-2a', noAuth, async (req: any, res) => {
     try {
@@ -1715,6 +1883,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating GSTR-2A:", error);
       res.status(500).json({ message: "Failed to generate GSTR-2A" });
+    }
+  });
+
+  // Generate GSTR-3B (alias endpoint) 
+  app.post('/api/gstr-3b/generate', noAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.userId;
+      const { period } = req.body;
+      
+      console.log(`GSTR-3B Generation Request: ${JSON.stringify({ userId, period })}`);
+      
+      // SECURITY: Get user's tenant_id for data isolation
+      const user = await storage.getUser(userId);
+      if (!user?.tenantId) {
+        return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
+      }
+      
+      // Get sales and purchase documents for GSTR-3B generation
+      const documents = await storage.getDocuments(userId);
+      const salesDocuments = documents.filter(doc => doc.documentType === 'sales_register');
+      const purchaseDocuments = documents.filter(doc => 
+        doc.documentType === 'purchase_register' || doc.documentType === 'vendor_invoice'
+      );
+      
+      // Extract sales and purchase data
+      let extractedSalesData = [];
+      let extractedPurchaseData = [];
+      
+      for (const doc of salesDocuments) {
+        if (doc.extractedData && doc.extractedData.sales) {
+          extractedSalesData = extractedSalesData.concat(doc.extractedData.sales);
+        }
+      }
+      
+      for (const doc of purchaseDocuments) {
+        if (doc.extractedData && doc.extractedData.invoices) {
+          extractedPurchaseData = extractedPurchaseData.concat(doc.extractedData.invoices);
+        }
+      }
+      
+      // Calculate totals
+      const totalOutwardSupplies = extractedSalesData.reduce((sum, sale) => sum + (sale.totalAmount || 0), 0);
+      const totalInwardSupplies = extractedPurchaseData.reduce((sum, inv) => sum + (inv.invoiceValue || 0), 0);
+      const netTaxLiability = totalOutwardSupplies * 0.18 - totalInwardSupplies * 0.18; // Simplified GST calculation
+      
+      const gstr3b = {
+        period: period || '2025',
+        gstin: 'GSTIN1234567890',
+        outwardSupplies: {
+          totalValue: totalOutwardSupplies,
+          taxableValue: totalOutwardSupplies / 1.18,
+          gstAmount: totalOutwardSupplies * 0.18
+        },
+        inwardSupplies: {
+          totalValue: totalInwardSupplies,
+          taxableValue: totalInwardSupplies / 1.18,
+          gstAmount: totalInwardSupplies * 0.18
+        },
+        netTaxLiability: Math.max(0, netTaxLiability),
+        summary: {
+          totalOutwardSupplies: extractedSalesData.length,
+          totalInwardSupplies: extractedPurchaseData.length,
+          netTaxPayable: Math.max(0, netTaxLiability)
+        }
+      };
+      
+      // Save the report
+      await storage.createFinancialStatement({
+        statementType: 'gstr_3b',
+        period: period || '2025',
+        data: gstr3b,
+        isValid: true,
+        generatedBy: userId,
+        tenantId: user.tenantId,
+      });
+      
+      res.json({
+        message: "GSTR-3B generated successfully",
+        data: gstr3b
+      });
+    } catch (error) {
+      console.error("Error generating GSTR-3B:", error);
+      res.status(500).json({ message: "Failed to generate GSTR-3B: " + error.message });
     }
   });
 
