@@ -483,100 +483,40 @@ class DataSourceService {
     });
   }
 
-  private createDefaultMasterData() {
-    const masterDataSets: MasterData[] = [
-      {
+  private async createDefaultMasterData() {
+    // Only create master data from actual database entries - no predefined data
+    const masterDataSets: MasterData[] = [];
+    
+    try {
+      // Create empty master data structure that will be populated from real data sources
+      const emptyGlCodes: MasterData = {
         id: "gl_codes",
-        type: "gl_codes",
-        data: [
-          { code: "1001", name: "Cash", type: "Asset", category: "Current Assets" },
-          { code: "1002", name: "Bank", type: "Asset", category: "Current Assets" },
-          { code: "1003", name: "Accounts Receivable", type: "Asset", category: "Current Assets" },
-          { code: "2001", name: "Accounts Payable", type: "Liability", category: "Current Liabilities" },
-          { code: "2002", name: "GST Payable", type: "Liability", category: "Current Liabilities" },
-          { code: "2003", name: "TDS Payable", type: "Liability", category: "Current Liabilities" },
-          { code: "3001", name: "Share Capital", type: "Equity", category: "Equity" },
-          { code: "4001", name: "Sales Revenue", type: "Revenue", category: "Income" },
-          { code: "5001", name: "Purchase Expenses", type: "Expense", category: "Cost of Goods Sold" },
-          { code: "5002", name: "Salary Expenses", type: "Expense", category: "Operating Expenses" }
-        ],
+        type: "gl_codes", 
+        data: [], // Will be populated from actual chart of accounts
         last_updated: new Date(),
-        source: "system_default"
-      },
-      {
+        source: "database_empty"
+      };
+      
+      const emptyTdsSections: MasterData = {
         id: "tds_sections",
         type: "tds_sections",
-        data: [
-          { code: "194A", description: "Interest other than on securities", rate: 10, threshold: 40000 },
-          { code: "194C", description: "Payment to contractors", rate: 1, threshold: 100000 },
-          { code: "194I", description: "Rent", rate: 10, threshold: 240000 },
-          { code: "194J", description: "Professional/Technical Services", rate: 10, threshold: 30000 },
-          { code: "194H", description: "Commission or brokerage", rate: 5, threshold: 15000 },
-          { code: "192", description: "Salary", rate: 0, threshold: 250000 },
-          { code: "194B", description: "Winnings from lottery", rate: 30, threshold: 10000 },
-          { code: "194D", description: "Insurance commission", rate: 5, threshold: 15000 }
-        ],
+        data: [], // Will be populated from actual TDS configuration
         last_updated: new Date(),
-        source: "income_tax_department"
-      },
-      {
-        id: "vendors",
-        type: "vendors",
-        data: [
-          { id: "V001", name: "ABC Suppliers Ltd", gstin: "09ABCDE1234F1Z5", pan: "ABCDE1234F", category: "Raw Materials" },
-          { id: "V002", name: "XYZ Services Pvt Ltd", gstin: "09XYZAB1234F1Z5", pan: "XYZAB1234F", category: "Professional Services" },
-          { id: "V003", name: "Tech Solutions Inc", gstin: "09TECHP1234F1Z5", pan: "TECHP1234F", category: "IT Services" },
-          { id: "V004", name: "Office Supplies Co", gstin: "09OFFIC1234F1Z5", pan: "OFFIC1234F", category: "Office Supplies" },
-          { id: "V005", name: "Transport Services", gstin: "09TRANS1234F1Z5", pan: "TRANS1234F", category: "Transportation" }
-        ],
-        last_updated: new Date(),
-        source: "manual_entry"
-      },
-      {
-        id: "cost_centers",
-        type: "cost_centers",
-        data: [
-          { code: "SALES", name: "Sales Department", budget: 1000000, head: "Sales Manager" },
-          { code: "MARKETING", name: "Marketing Department", budget: 500000, head: "Marketing Manager" },
-          { code: "ADMIN", name: "Administration", budget: 300000, head: "Admin Manager" },
-          { code: "IT", name: "Information Technology", budget: 800000, head: "IT Manager" },
-          { code: "HR", name: "Human Resources", budget: 400000, head: "HR Manager" },
-          { code: "FINANCE", name: "Finance Department", budget: 200000, head: "Finance Manager" }
-        ],
-        last_updated: new Date(),
-        source: "system_setup"
-      },
-      {
-        id: "customers",
-        type: "customers",
-        data: [
-          { id: "C001", name: "ABC Corp Ltd", gstin: "09ABCCO1234F1Z5", pan: "ABCCO1234F", category: "Corporate" },
-          { id: "C002", name: "XYZ Industries", gstin: "09XYZIN1234F1Z5", pan: "XYZIN1234F", category: "Manufacturing" },
-          { id: "C003", name: "Tech Innovations", gstin: "09TECHI1234F1Z5", pan: "TECHI1234F", category: "Technology" },
-          { id: "C004", name: "Retail Solutions", gstin: "09RETAIL1234F1Z5", pan: "RETAIL1234F", category: "Retail" },
-          { id: "C005", name: "Service Providers", gstin: "09SERVIC1234F1Z5", pan: "SERVIC1234F", category: "Services" }
-        ],
-        last_updated: new Date(),
-        source: "manual_entry"
-      },
-      {
-        id: "products",
-        type: "products",
-        data: [
-          { id: "P001", name: "Software License", hsn_code: "998311", gst_rate: 18, category: "Software" },
-          { id: "P002", name: "Consulting Services", hsn_code: "998314", gst_rate: 18, category: "Services" },
-          { id: "P003", name: "Hardware Equipment", hsn_code: "847330", gst_rate: 18, category: "Hardware" },
-          { id: "P004", name: "Training Services", hsn_code: "924990", gst_rate: 18, category: "Education" },
-          { id: "P005", name: "Support Services", hsn_code: "998313", gst_rate: 18, category: "Support" }
-        ],
-        last_updated: new Date(),
-        source: "product_catalog"
-      }
-    ];
+        source: "database_empty"
+      };
+      
+      masterDataSets.push(emptyGlCodes, emptyTdsSections);
+      
+      // Store empty structures that will be populated from real data sources
+      masterDataSets.forEach(data => {
+        this.masterData.set(data.id, data);
+      });
 
-    masterDataSets.forEach(data => {
-      this.masterData.set(data.id, data);
-    });
+      console.log("✅ Master data structures initialized (empty, waiting for real data)");
+    } catch (error) {
+      console.error("Error creating master data structures:", error);
+      throw error;
+    }
   }
 
   // Data Source Management
@@ -781,18 +721,33 @@ class DataSourceService {
     return updated;
   }
 
-  // AI Learning Initialization
+  // AI Learning Initialization - requires real data sources to be connected
   async initializeAILearning(): Promise<{ success: boolean; message: string; samplesProcessed: number }> {
     try {
-      // Simulate AI learning initialization
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Count actual data sources that are connected
+      const connectedSources = Array.from(this.dataSources.values()).filter(
+        source => source.status === ConnectionStatus.CONNECTED
+      );
       
-      const samplesProcessed = Math.floor(Math.random() * 50) + 20;
+      if (connectedSources.length === 0) {
+        return {
+          success: false,
+          message: "No connected data sources available for AI learning",
+          samplesProcessed: 0
+        };
+      }
+      
+      // Process real data from connected sources
+      let totalSamples = 0;
+      for (const source of connectedSources) {
+        // In real implementation, this would process actual data from each source
+        totalSamples += 1; // Placeholder for actual data processing count
+      }
       
       return {
-        success: true,
-        message: "AI learning initialized with historical data",
-        samplesProcessed
+        success: totalSamples > 0,
+        message: totalSamples > 0 ? `AI learning initialized with ${connectedSources.length} data sources` : "No data available for AI learning",
+        samplesProcessed: totalSamples
       };
     } catch (error) {
       return {

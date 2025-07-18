@@ -106,7 +106,11 @@ export default function DocumentManagement() {
   };
 
   const getDataSourceInfo = (document: Document) => {
-    // Mock data source information - in real implementation, this would come from the document metadata
+    // Get data source from document metadata or determine from actual file properties
+    const actualDataSource = document.metadata?.dataSource || 
+                             document.dataSource || 
+                             'Manual Upload';
+    
     const dataSources = [
       { id: 'manual', name: 'Manual Upload', icon: User, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
       { id: 'sap', name: 'SAP ERP', icon: Database, color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
@@ -117,26 +121,13 @@ export default function DocumentManagement() {
       { id: 'api', name: 'API Integration', icon: Settings, color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200' }
     ];
 
-    // Determine data source based on document properties
-    const fileName = document.originalName.toLowerCase();
-    const documentType = document.documentType;
+    // Return data source based on actual document metadata
+    const source = dataSources.find(ds => 
+      ds.name.toLowerCase() === actualDataSource.toLowerCase() ||
+      ds.id === actualDataSource.toLowerCase()
+    );
     
-    // Logic to determine data source based on file patterns or metadata
-    if (fileName.includes('sap') || fileName.includes('_sap_')) {
-      return dataSources.find(ds => ds.id === 'sap') || dataSources[0];
-    } else if (fileName.includes('zoho') || fileName.includes('_zoho_')) {
-      return dataSources.find(ds => ds.id === 'zoho') || dataSources[0];
-    } else if (fileName.includes('tally') || fileName.includes('_tally_')) {
-      return dataSources.find(ds => ds.id === 'tally') || dataSources[0];
-    } else if (fileName.includes('quickbooks') || fileName.includes('_qb_')) {
-      return dataSources.find(ds => ds.id === 'quickbooks') || dataSources[0];
-    } else if (fileName.includes('api') || document.extractedData?.source === 'api') {
-      return dataSources.find(ds => ds.id === 'api') || dataSources[0];
-    } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
-      return dataSources.find(ds => ds.id === 'excel') || dataSources[0];
-    } else {
-      return dataSources.find(ds => ds.id === 'manual') || dataSources[0];
-    }
+    return source || dataSources[0]; // Default to Manual Upload if not found
   };
 
   const getStatusColor = (status: string) => {
