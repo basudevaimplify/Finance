@@ -21,6 +21,7 @@ import { AnthropicService } from "./services/anthropic";
 import { insertDocumentSchema } from "@shared/schema";
 import { nanoid } from "nanoid";
 import { writeFile } from "fs/promises";
+import fs from "fs";
 import path from "path";
 import { spawn } from "child_process";
 import bcrypt from "bcrypt";
@@ -794,12 +795,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (dbError) {
         console.warn(`Database connection issue, using demo mode: ${dbError.message}`);
         // Return mock documents based on uploaded files
-        const fs = require('fs');
-        const path = require('path');
-        const uploadsDir = path.join(process.cwd(), 'uploads');
+        const uploadsDir = './uploads';
         
         try {
-          const files = fs.readdirSync(uploadsDir).filter(file => file !== '.gitkeep');
+          const files = fs.readdirSync(uploadsDir).filter((file: string) => file !== '.gitkeep');
           documents = files.map((file: string, index: number) => {
             const stats = fs.statSync(path.join(uploadsDir, file));
             const originalName = file.includes('_') ? file.split('_').slice(1).join('_') : file;
