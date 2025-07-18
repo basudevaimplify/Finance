@@ -872,7 +872,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const user = await storage.getUser(userId);
         if (user?.tenantId) {
-          documents = await storage.getDocuments(userId);
+          documents = await storage.getDocuments(user.tenantId);
+        } else {
+          // User not found, trigger fallback mode
+          throw new Error('User not found in database');
         }
       } catch (dbError) {
         console.warn(`Database connection issue, using demo mode: ${dbError.message}`);
