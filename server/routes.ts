@@ -799,26 +799,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const uploadsDir = path.join(process.cwd(), 'uploads');
         
         try {
-          const files = fs.readdirSync(uploadsDir);
+          const files = fs.readdirSync(uploadsDir).filter(file => file !== '.gitkeep');
           documents = files.map((file: string, index: number) => {
             const stats = fs.statSync(path.join(uploadsDir, file));
+            const originalName = file.includes('_') ? file.split('_').slice(1).join('_') : file;
+            
+            // Smart document type detection
+            let documentType = 'vendor_invoice';
+            if (file.includes('purchase')) documentType = 'purchase_register';
+            else if (file.includes('sales')) documentType = 'sales_register';
+            else if (file.includes('tds')) documentType = 'tds';
+            else if (file.includes('bank')) documentType = 'bank_statement';
+            else if (file.includes('fixed_asset') || file.includes('asset')) documentType = 'fixed_assets';
+            else if (file.includes('salary')) documentType = 'salary_register';
+            else if (file.includes('compliance') || file.includes('qrt')) documentType = 'purchase_register';
+            
             return {
-              id: `demo-${Date.now()}-${index}`,
+              id: `demo-${stats.birthtime.getTime()}-${index}`,
               fileName: file,
-              originalName: file.split('_').slice(1).join('_'), // Remove nanoid prefix
+              originalName: originalName,
               mimeType: file.endsWith('.xlsx') ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 
                        file.endsWith('.pdf') ? 'application/pdf' : 
                        file.endsWith('.csv') ? 'text/csv' : 'application/octet-stream',
               fileSize: stats.size,
               status: 'classified',
-              documentType: file.includes('purchase') ? 'purchase_register' : 
-                           file.includes('sales') ? 'sales_register' :
-                           file.includes('tds') ? 'tds' :
-                           file.includes('bank') ? 'bank_statement' : 'vendor_invoice',
+              documentType: documentType,
               uploadedBy: userId,
               tenantId: 'demo-tenant-001',
-              createdAt: stats.birthtime,
-              updatedAt: stats.mtime
+              createdAt: stats.birthtime.toISOString(),
+              updatedAt: stats.mtime.toISOString(),
+              filePath: `/uploads/${file}`,
+              dataSource: 'Manual Upload'
             };
           });
         } catch (fsError) {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -314,10 +314,49 @@ export default function DocumentUpload() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: documents, isLoading: documentsLoading } = useQuery<Document[]>({
+  const { data: documents, isLoading: documentsLoading, refetch: refetchDocuments } = useQuery<Document[]>({
     queryKey: ["/api/documents"],
     retry: false,
   });
+
+  const queryClient = useQueryClient();
+
+  // Helper functions for display
+  const getDocumentTypeDisplay = (type: string) => {
+    const typeMap: Record<string, string> = {
+      'vendor_invoice': 'Vendor Invoice',
+      'purchase_register': 'Purchase Register',
+      'sales_register': 'Sales Register',
+      'tds': 'TDS Certificate',
+      'bank_statement': 'Bank Statement',
+      'fixed_assets': 'Fixed Assets',
+      'salary_register': 'Salary Register'
+    };
+    return typeMap[type] || type.replace('_', ' ').toUpperCase();
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'classified':
+        return <Badge className="bg-green-100 text-green-800">Classified</Badge>;
+      case 'uploaded':
+        return <Badge className="bg-blue-100 text-blue-800">Uploaded</Badge>;
+      case 'processing':
+        return <Badge className="bg-yellow-100 text-yellow-800">Processing</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  // Force refresh function to ensure consistency across all modules
+  const handleRefreshDocuments = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+    refetchDocuments();
+    toast({
+      title: "Refreshing Documents",
+      description: "Updating document list from all sources...",
+    });
+  };
 
   // Helper function to map document types to requirement IDs
   const mapDocumentTypeToRequirementId = (documentType: string): string => {
@@ -742,32 +781,7 @@ export default function DocumentUpload() {
     );
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <Badge className="badge-compliant">Completed</Badge>;
-      case 'processing':
-        return <Badge className="bg-accent/10 text-accent">Processing</Badge>;
-      case 'failed':
-        return <Badge className="badge-non-compliant">Failed</Badge>;
-      default:
-        return <Badge className="badge-pending">Uploaded</Badge>;
-    }
-  };
 
-  const getDocumentTypeDisplay = (type: string) => {
-    switch (type) {
-      case 'journal': return 'Journal';
-      case 'gst': return 'GST Returns';
-      case 'tds': return 'TDS Certificate';
-      case 'trial_balance': return 'Trial Balance';
-      case 'fixed_asset_register': return 'Fixed Asset Register';
-      case 'purchase_register': return 'Purchase Register';
-      case 'sales_register': return 'Sales Register';
-      case 'bank_statement': return 'Bank Statement';
-      default: return 'Other';
-    }
-  };
 
   return (
     <PageLayout title="Document Upload">
@@ -1116,7 +1130,20 @@ export default function DocumentUpload() {
           <TabsContent value="uploaded" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Uploaded Documents</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Uploaded Documents</CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRefreshDocuments}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  All uploaded documents synchronized across modules
+                </p>
               </CardHeader>
               <CardContent>
                 {documentsLoading ? (
