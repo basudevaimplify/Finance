@@ -2,7 +2,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 export function useAuth() {
-  const [token, setToken] = useState<string | null>('demo-token');
+  const [token, setToken] = useState<string | null>(() => {
+    // Initialize localStorage with demo token on first render
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('access_token', 'demo-token');
+    }
+    return 'demo-token';
+  });
   const queryClient = useQueryClient();
 
   // Mock user data for demo - no authentication required
@@ -18,12 +24,14 @@ export function useAuth() {
   const login = (userData: any, accessToken: string, refreshToken?: string) => {
     // For demo purposes, just set the token
     setToken(accessToken);
+    localStorage.setItem('access_token', accessToken);
     queryClient.setQueryData(["/api/auth/user"], userData);
   };
 
   const logout = async () => {
     // For demo purposes, just clear the token
     setToken(null);
+    localStorage.removeItem('access_token');
     queryClient.setQueryData(["/api/auth/user"], null);
   };
 
