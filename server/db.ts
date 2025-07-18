@@ -6,24 +6,15 @@ import * as schema from "@shared/schema";
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Enhanced Supabase connection with multiple approaches
-const SUPABASE_PROJECT_ID = "gjikvgpngijuygehakzb";
+// Use correct Supabase pooler connection string
 const SUPABASE_PASSWORD = "aimplify@1";
+const DATABASE_URL = `postgresql://postgres.gjikvgpngijuygehakzb:${SUPABASE_PASSWORD}@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true`;
 
-// Try multiple connection methods
-const connectionOptions = [
-  `postgresql://postgres:${SUPABASE_PASSWORD}@db.${SUPABASE_PROJECT_ID}.supabase.co:5432/postgres`,
-  `postgresql://postgres:${SUPABASE_PASSWORD}@db.${SUPABASE_PROJECT_ID}.supabase.co:6543/postgres`, // Pooler port
-  process.env.SUPABASE_DATABASE_URL || "",
-  process.env.DATABASE_URL || ""
-].filter(url => url.length > 0);
-
-// Use the first available connection option
-const DATABASE_URL = connectionOptions[0];
+// Set the correct database URL
 process.env.DATABASE_URL = DATABASE_URL;
 
-console.log(`DEBUG: Attempting to connect to Supabase project: ${SUPABASE_PROJECT_ID}`);
-console.log(`WARNING: Supabase project appears to be deleted/paused. Platform running in optimized demo mode.`);
+console.log(`DEBUG: Connecting to Supabase via pooler connection`);
+console.log(`DEBUG: Using AWS ap-south-1 region with pgbouncer`);
 
 if (!DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is required');
