@@ -713,8 +713,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const { Pool } = await import('pg');
           const directPool = new Pool({
-            connectionString: 'postgresql://postgres.gjikvgpngijuygehakzb:aimplify@1@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true',
-            ssl: { rejectUnauthorized: false }
+            connectionString: process.env.DATABASE_URL
           });
           
           const client = await directPool.connect();
