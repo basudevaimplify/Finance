@@ -34,3 +34,4 @@ This repository contains a FastAPI backend and a React/Express frontend.
 # newf
 # newf
 # newf
+# finance
