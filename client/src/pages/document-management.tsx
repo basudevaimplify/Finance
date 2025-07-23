@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Upload, Download, Eye, Trash2, Calendar, RefreshCw, Database, User, Settings, Filter } from "lucide-react";
+import { FileText, Upload, Download, Eye, Trash2, Calendar, RefreshCw, Database, User, Settings, Filter, Plus } from "lucide-react";
 import { format } from "date-fns";
 import type { Document } from "@shared/schema";
 
@@ -74,6 +74,45 @@ export default function DocumentManagement() {
       toast({
         title: "Error",
         description: `Failed to delete document: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const generateJournalMutation = useMutation({
+    mutationFn: async (documentId: string) => {
+      const response = await apiRequest(`/api/documents/${documentId}/generate-journal`, {
+        method: 'POST'
+      });
+      return response;
+    },
+    onSuccess: (data, documentId) => {
+      const document = documents?.find(doc => doc.id === documentId);
+      toast({
+        title: "Success",
+        description: `Journal entries generated successfully for ${document?.originalName}`,
+      });
+      refetch();
+      // Invalidate journal entries query to refresh data tables
+      queryClient.invalidateQueries({ queryKey: ['/api/journal-entries'] });
+    },
+    onError: (error) => {
+      console.error("Journal generation error:", error);
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+
+      toast({
+        title: "Error",
+        description: `Failed to generate journal entries: ${error.message}`,
         variant: "destructive",
       });
     },
@@ -356,6 +395,18 @@ export default function DocumentManagement() {
                                   onClick={() => window.open(`/uploads/${document.filePath}`, '_blank')}
                                 >
                                   <Download className="h-3 w-3" />
+                                </Button>
+                              )}
+                              {document.status === 'extracted' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => generateJournalMutation.mutate(document.id)}
+                                  disabled={generateJournalMutation.isPending}
+                                  className="text-green-600 hover:text-green-700"
+                                  title="Generate Journal Entries"
+                                >
+                                  <Plus className="h-3 w-3" />
                                 </Button>
                               )}
                               <AlertDialog>

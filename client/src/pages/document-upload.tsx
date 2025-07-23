@@ -14,7 +14,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { FileText, Download, Trash2, Eye, CheckCircle, XCircle, AlertCircle, Calendar, FileIcon, Upload, HelpCircle, Edit, Cog, Calculator, RefreshCw } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FileText, Download, Trash2, Eye, CheckCircle, XCircle, AlertCircle, Calendar, FileIcon, Upload, HelpCircle, Edit, Cog, Calculator, RefreshCw, ArrowRight, Database } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import type { Document } from "@shared/schema";
 
@@ -53,11 +54,13 @@ export default function DocumentUpload() {
   };
 
   const handleGenerate = async (docId: string, docName: string) => {
+    console.log('Document Upload - Starting generation for:', docId, docName);
+
     toast({
       title: "Generating Document",
       description: `Processing ${docName}... This may take a few moments.`,
     });
-    
+
     try {
       let endpoint = '';
       switch (docId) {
@@ -76,40 +79,51 @@ export default function DocumentUpload() {
         case 'journal_entries':
           endpoint = '/api/journal-entries/generate';
           break;
+        case 'trial_balance':
+          endpoint = '/api/reports/trial-balance/generate';
+          break;
         case 'bank_reconciliation':
           endpoint = '/api/reports/bank-reconciliation';
           break;
         default:
           throw new Error(`Generation not implemented for ${docName}`);
       }
-      
+
+      console.log('Document Upload - Using endpoint:', endpoint);
+
       const token = localStorage.getItem('access_token');
       if (!token) {
-        throw new Error('No authentication token found');
+        console.log('Document Upload - No access token found, using demo token');
       }
-      
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${token || 'demo-token'}`,
         },
         body: JSON.stringify({ period: 'Q3_2025' }),
         credentials: 'include',
       });
-      
+
+      console.log('Document Upload - Response status:', response.status);
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Document Upload - Response error:', errorText);
         throw new Error('Failed to generate document');
       }
-      
+
       const data = await response.json();
-      
+      console.log('Document Upload - Response data:', data);
+
       toast({
         title: "Document Generated",
         description: `${docName} has been generated successfully. You can view it in the Financial Reports section.`,
       });
-      
+
     } catch (error) {
+      console.error('Document Upload - Generation error:', error);
       toast({
         title: "Generation Failed",
         description: `Failed to generate ${docName}. Please try again.`,
@@ -178,12 +192,92 @@ export default function DocumentUpload() {
     }
   };
 
-  const handleView = (docId: string, docName: string) => {
-    toast({
-      title: "View Document",
-      description: `Opening ${docName}...`,
-    });
-    // TODO: Implement view logic
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewingDocument, setViewingDocument] = useState<any>(null);
+  const [extractedData, setExtractedData] = useState<any>(null);
+  const [loadingExtractedData, setLoadingExtractedData] = useState(false);
+
+  const handleView = async (docId: string, docName: string) => {
+    try {
+      setLoadingExtractedData(true);
+      setViewModalOpen(true);
+
+      // Check if this is a requirement ID or actual document ID
+      const actualDocument = documents?.find(doc => doc.id === docId);
+      const requirement = documentRequirements.find(req => req.id === docId);
+
+      if (actualDocument) {
+        // This is an actual uploaded document
+        setViewingDocument(actualDocument);
+        console.log('Viewing actual document:', actualDocument);
+
+        // Fetch all extracted data first
+        const response = await apiRequest(`/api/extracted-data?period=Q1_2025&docType=all`);
+        const allData = await response.json();
+        console.log('All extracted data:', allData);
+
+        // Find the specific document's data by matching document ID
+        const documentData = allData.find((item: any) => {
+          console.log('Comparing:', item.documentId, 'with', docId);
+          return item.documentId === docId || item.id === docId;
+        });
+
+        console.log('Found document data:', documentData);
+        setExtractedData(documentData);
+      } else if (requirement) {
+        // This is a requirement - find uploaded documents of this type
+        const matchingDocuments = documents?.filter(doc =>
+          doc.documentType === requirement.id
+        );
+
+        if (matchingDocuments && matchingDocuments.length > 0) {
+          // Use the first matching document
+          const document = matchingDocuments[0];
+          setViewingDocument(document);
+          console.log('Viewing document for requirement:', document);
+
+          // Fetch all extracted data first
+          const response = await apiRequest(`/api/extracted-data?period=Q1_2025&docType=all`);
+          const allData = await response.json();
+          console.log('All extracted data:', allData);
+
+          // Find the specific document's data by matching document ID
+          const documentData = allData.find((item: any) => {
+            console.log('Comparing:', item.documentId, 'with', document.id);
+            return item.documentId === document.id || item.id === document.id;
+          });
+
+          console.log('Found document data:', documentData);
+          setExtractedData(documentData);
+        } else {
+          toast({
+            title: "No Document Found",
+            description: `No uploaded document found for ${docName}`,
+            variant: "destructive",
+          });
+          setViewModalOpen(false);
+          return;
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: "Document not found",
+          variant: "destructive",
+        });
+        setViewModalOpen(false);
+        return;
+      }
+
+    } catch (error) {
+      console.error('Error loading document data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load document data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingExtractedData(false);
+    }
   };
 
   const handleEdit = (docId: string, docName: string) => {
@@ -404,6 +498,11 @@ export default function DocumentUpload() {
     retry: false,
   });
 
+  // Fetch extracted data to check which documents are available in Data Tables
+  const { data: allExtractedData } = useQuery({
+    queryKey: ['/api/extracted-data?period=Q1_2025&docType=all'],
+  });
+
   // Helper functions for display
   const getDocumentTypeDisplay = (type: string) => {
     const typeMap: Record<string, string> = {
@@ -418,17 +517,36 @@ export default function DocumentUpload() {
     return typeMap[type] || type.replace('_', ' ').toUpperCase();
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'classified':
-        return <Badge className="bg-green-100 text-green-800">Classified</Badge>;
-      case 'uploaded':
-        return <Badge className="bg-blue-100 text-blue-800">Uploaded</Badge>;
-      case 'processing':
-        return <Badge className="bg-yellow-100 text-yellow-800">Processing</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
+  const getStatusBadge = (status: string, documentId: string) => {
+    // Check if document has extracted data available in Data Tables
+    const hasExtractedData = allExtractedData?.some((item: any) =>
+      item.documentId === documentId || item.id === documentId
+    );
+
+    const statusBadge = (() => {
+      switch (status) {
+        case 'classified':
+          return <Badge className="bg-green-100 text-green-800">Classified</Badge>;
+        case 'uploaded':
+          return <Badge className="bg-blue-100 text-blue-800">Uploaded</Badge>;
+        case 'processing':
+          return <Badge className="bg-yellow-100 text-yellow-800">Processing</Badge>;
+        default:
+          return <Badge variant="outline">{status}</Badge>;
+      }
+    })();
+
+    return (
+      <div className="flex flex-col gap-1">
+        {statusBadge}
+        {hasExtractedData && (
+          <Badge className="bg-purple-100 text-purple-800 text-xs">
+            <Database className="h-3 w-3 mr-1" />
+            In Data Tables
+          </Badge>
+        )}
+      </div>
+    );
   };
 
   // Force refresh function to ensure consistency across all modules
@@ -893,6 +1011,43 @@ export default function DocumentUpload() {
           </p>
         </div>
 
+        {/* Navigation to Data Tables */}
+        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Database className="h-5 w-5 text-blue-600" />
+                <div>
+                  <h3 className="font-semibold text-blue-900">View Extracted Data</h3>
+                  <p className="text-sm text-blue-700">
+                    Documents uploaded here are automatically processed and available in Data Tables
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                {allExtractedData && (
+                  <div className="text-right">
+                    <div className="text-sm font-medium text-blue-900">
+                      {allExtractedData.length} documents processed
+                    </div>
+                    <div className="text-xs text-blue-600">
+                      Ready for analysis
+                    </div>
+                  </div>
+                )}
+                <Button
+                  variant="outline"
+                  className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                  onClick={() => window.location.href = '/data-tables'}
+                >
+                  Go to Data Tables
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Completion Overview */}
         <Card>
           <CardHeader>
@@ -1092,116 +1247,154 @@ export default function DocumentUpload() {
                               )}
                               
                               {/* Primary Documents - View/Edit Actions */}
-                              {requirement.documentType === 'primary' && requirement.isUploaded && (
-                                <div className="flex space-x-1">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="text-xs"
-                                    onClick={() => handleView(requirement.id, requirement.name)}
-                                  >
-                                    <Eye className="h-3 w-3 mr-1" />
-                                    View
-                                  </Button>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    className="text-xs"
-                                    onClick={() => handleEdit(requirement.id, requirement.name)}
-                                  >
-                                    <Edit className="h-3 w-3 mr-1" />
-                                    Edit
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="text-xs text-destructive"
-                                    onClick={() => handleDelete(requirement.id, requirement.name)}
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              )}
+                              {(() => {
+                                const hasUploadedDocument = documents?.some(uploadedDoc =>
+                                  uploadedDoc.documentType === requirement.id
+                                );
+
+                                // Exclude purchase_register and sales_register from showing action buttons
+                                const shouldShowActions = requirement.documentType === 'primary' &&
+                                  hasUploadedDocument &&
+                                  requirement.id !== 'purchase_register' &&
+                                  requirement.id !== 'sales_register';
+
+                                return shouldShowActions && (
+                                  <div className="flex space-x-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-xs"
+                                      onClick={() => handleView(requirement.id, requirement.name)}
+                                    >
+                                      <Eye className="h-3 w-3 mr-1" />
+                                      View
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-xs"
+                                      onClick={() => handleEdit(requirement.id, requirement.name)}
+                                    >
+                                      <Edit className="h-3 w-3 mr-1" />
+                                      Edit
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-xs text-destructive"
+                                      onClick={() => handleDelete(requirement.id, requirement.name)}
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                );
+                              })()}
                               
                               {/* Derived Documents - Generate Actions */}
-                              {requirement.documentType === 'derived' && requirement.canGenerate && (
-                                <div className="flex space-x-1">
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    className="text-xs"
-                                    disabled={false}
-                                    onClick={() => handleGenerate(requirement.id, requirement.name)}
-                                  >
-                                    <Cog className="h-3 w-3 mr-1" />
-                                    Generate
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="text-xs"
-                                    onClick={() => handleDownload(requirement.id, requirement.name)}
-                                  >
-                                    <Download className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              )}
+                              {(() => {
+                                const hasUploadedDocument = documents?.some(uploadedDoc =>
+                                  uploadedDoc.documentType === requirement.id
+                                );
+
+                                // Only show generate actions if there's no uploaded document yet
+                                return requirement.documentType === 'derived' && requirement.canGenerate && !hasUploadedDocument && (
+                                  <div className="flex space-x-1">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-xs"
+                                      disabled={false}
+                                      onClick={() => handleGenerate(requirement.id, requirement.name)}
+                                    >
+                                      <Cog className="h-3 w-3 mr-1" />
+                                      Generate
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-xs"
+                                      onClick={() => handleDownload(requirement.id, requirement.name)}
+                                    >
+                                      <Download className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                );
+                              })()}
                               
                               {/* Calculated Documents - Auto-Calculate Actions */}
-                              {requirement.documentType === 'calculated' && (
-                                <div className="flex space-x-1">
-                                  <Button 
-                                    variant="secondary" 
-                                    size="sm" 
-                                    className="text-xs"
-                                    disabled={!documentRequirements.filter(req => req.documentType === 'derived').every(req => req.isUploaded)}
-                                    onClick={() => handleCalculate(requirement.id, requirement.name)}
-                                  >
-                                    <Calculator className="h-3 w-3 mr-1" />
-                                    Calculate
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="text-xs"
-                                    onClick={() => handleView(requirement.id, requirement.name)}
-                                  >
-                                    <FileText className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              )}
+                              {(() => {
+                                const hasUploadedDocument = documents?.some(uploadedDoc =>
+                                  uploadedDoc.documentType === requirement.id
+                                );
+
+                                return requirement.documentType === 'calculated' && (
+                                  <div className="flex space-x-1">
+                                    {/* Show Calculate button only if document is not yet uploaded */}
+                                    {!hasUploadedDocument && (
+                                      <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        className="text-xs"
+                                        disabled={!documentRequirements.filter(req => req.documentType === 'derived').every(req => req.isUploaded)}
+                                        onClick={() => handleCalculate(requirement.id, requirement.name)}
+                                      >
+                                        <Calculator className="h-3 w-3 mr-1" />
+                                        Calculate
+                                      </Button>
+                                    )}
+
+                                    {/* Show View button only if document is uploaded */}
+                                    {hasUploadedDocument && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-xs"
+                                        onClick={() => handleView(requirement.id, requirement.name)}
+                                      >
+                                        <FileText className="h-3 w-3" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                               
                               {/* View Generated/Calculated Documents */}
-                              {(requirement.documentType === 'derived' || requirement.documentType === 'calculated') && requirement.isUploaded && (
-                                <div className="flex space-x-1">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="text-xs"
-                                    onClick={() => handleView(requirement.id, requirement.name)}
-                                  >
-                                    <Eye className="h-3 w-3 mr-1" />
-                                    View
-                                  </Button>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    className="text-xs"
-                                    onClick={() => handleDownload(requirement.id, requirement.name)}
-                                  >
-                                    <Download className="h-3 w-3 mr-1" />
-                                    Export
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="text-xs"
-                                    onClick={() => handleRefresh(requirement.id, requirement.name)}
-                                  >
-                                    <RefreshCw className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              )}
+                              {(() => {
+                                const hasUploadedDocument = documents?.some(uploadedDoc =>
+                                  uploadedDoc.documentType === requirement.id
+                                );
+
+                                return (requirement.documentType === 'derived' || requirement.documentType === 'calculated') && hasUploadedDocument && (
+                                  <div className="flex space-x-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-xs"
+                                      onClick={() => handleView(requirement.id, requirement.name)}
+                                    >
+                                      <Eye className="h-3 w-3 mr-1" />
+                                      View
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-xs"
+                                      onClick={() => handleDownload(requirement.id, requirement.name)}
+                                    >
+                                      <Download className="h-3 w-3 mr-1" />
+                                      Export
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-xs"
+                                      onClick={() => handleRefresh(requirement.id, requirement.name)}
+                                    >
+                                      <RefreshCw className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                );
+                              })()}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -1266,7 +1459,6 @@ export default function DocumentUpload() {
                           <TableHead className="table-header">Status</TableHead>
                           <TableHead className="table-header">Size</TableHead>
                           <TableHead className="table-header">Uploaded</TableHead>
-                          <TableHead className="table-header">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1282,48 +1474,13 @@ export default function DocumentUpload() {
                               {doc.documentType ? getDocumentTypeDisplay(doc.documentType) : 'Unknown'}
                             </TableCell>
                             <TableCell className="table-cell">
-                              {getStatusBadge(doc.status)}
+                              {getStatusBadge(doc.status, doc.id)}
                             </TableCell>
                             <TableCell className="table-cell">
                               {(doc.fileSize / 1024 / 1024).toFixed(2)} MB
                             </TableCell>
                             <TableCell className="table-cell">
                               {formatDistanceToNow(new Date(doc.createdAt), { addSuffix: true })}
-                            </TableCell>
-                            <TableCell className="table-cell">
-                              <div className="flex items-center space-x-2">
-                                <Button variant="ghost" size="sm" onClick={() => window.open(`/uploads/${doc.filePath}`, '_blank')}>
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="sm" onClick={() => window.open(`/uploads/${doc.filePath}`, '_blank')}>
-                                  <Download className="h-4 w-4" />
-                                </Button>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="text-destructive">
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Delete Document</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Are you sure you want to delete "{doc.originalName}"? This action cannot be undone and will also remove any associated journal entries.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction
-                                        onClick={() => deleteMutation.mutate(doc.id)}
-                                        className="bg-red-600 hover:bg-red-700"
-                                        disabled={deleteMutation.isPending}
-                                      >
-                                        {deleteMutation.isPending ? "Deleting..." : "Delete"}
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -1336,6 +1493,230 @@ export default function DocumentUpload() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* View Document Modal */}
+      <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {viewingDocument ? `View ${viewingDocument.originalName}` : 'View Document'}
+            </DialogTitle>
+            <DialogDescription>
+              {viewingDocument ? `Document Type: ${getDocumentTypeDisplay(viewingDocument.documentType)}` : ''}
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingExtractedData ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="loading-spinner h-8 w-8" />
+              <span className="ml-2">Loading document data...</span>
+            </div>
+          ) : extractedData ? (
+            <div className="space-y-4">
+              {/* Bank Statement Data */}
+              {viewingDocument?.documentType === 'bank_statement' && extractedData.data?.transactions && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Bank Statement Transactions</h3>
+                  <div className="mb-4 grid grid-cols-4 gap-4">
+                    <div className="bg-blue-50 p-3 rounded">
+                      <p className="text-sm text-gray-600">Total Transactions</p>
+                      <p className="text-xl font-bold">{extractedData.data.transactions.length}</p>
+                    </div>
+                    <div className="bg-green-50 p-3 rounded">
+                      <p className="text-sm text-gray-600">Total Credits</p>
+                      <p className="text-xl font-bold">₹{extractedData.data.totalCredits?.toLocaleString()}</p>
+                    </div>
+                    <div className="bg-red-50 p-3 rounded">
+                      <p className="text-sm text-gray-600">Total Debits</p>
+                      <p className="text-xl font-bold">₹{extractedData.data.totalDebits?.toLocaleString()}</p>
+                    </div>
+                    <div className="bg-purple-50 p-3 rounded">
+                      <p className="text-sm text-gray-600">Closing Balance</p>
+                      <p className="text-xl font-bold">₹{extractedData.data.closingBalance?.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Reference</TableHead>
+                          <TableHead className="text-right">Debit</TableHead>
+                          <TableHead className="text-right">Credit</TableHead>
+                          <TableHead className="text-right">Balance</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {extractedData.data.transactions.map((transaction: any, index: number) => (
+                          <TableRow key={index}>
+                            <TableCell>{transaction.date}</TableCell>
+                            <TableCell>{transaction.description}</TableCell>
+                            <TableCell>{transaction.reference}</TableCell>
+                            <TableCell className="text-right">
+                              {transaction.debit > 0 ? `₹${transaction.debit.toLocaleString()}` : '-'}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {transaction.credit > 0 ? `₹${transaction.credit.toLocaleString()}` : '-'}
+                            </TableCell>
+                            <TableCell className="text-right">₹{transaction.balance.toLocaleString()}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+
+              {/* Sales Register Data */}
+              {viewingDocument?.documentType === 'sales_register' && extractedData.data?.sales && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Sales Register</h3>
+                  <div className="mb-4 grid grid-cols-4 gap-4">
+                    <div className="bg-blue-50 p-3 rounded">
+                      <p className="text-sm text-gray-600">Total Sales</p>
+                      <p className="text-xl font-bold">{extractedData.data.sales.length}</p>
+                    </div>
+                    <div className="bg-green-50 p-3 rounded">
+                      <p className="text-sm text-gray-600">Total Invoice Value</p>
+                      <p className="text-xl font-bold">₹{extractedData.data.totalInvoiceValue?.toLocaleString()}</p>
+                    </div>
+                    <div className="bg-yellow-50 p-3 rounded">
+                      <p className="text-sm text-gray-600">Total Taxable Value</p>
+                      <p className="text-xl font-bold">₹{extractedData.data.totalTaxableValue?.toLocaleString()}</p>
+                    </div>
+                    <div className="bg-purple-50 p-3 rounded">
+                      <p className="text-sm text-gray-600">Total GST Amount</p>
+                      <p className="text-xl font-bold">₹{extractedData.data.totalGstAmount?.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Invoice No</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Customer</TableHead>
+                          <TableHead>Item</TableHead>
+                          <TableHead className="text-right">Qty</TableHead>
+                          <TableHead className="text-right">Rate</TableHead>
+                          <TableHead className="text-right">Taxable Value</TableHead>
+                          <TableHead className="text-right">GST Amount</TableHead>
+                          <TableHead className="text-right">Invoice Total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {extractedData.data.sales.map((sale: any, index: number) => (
+                          <TableRow key={index}>
+                            <TableCell>{sale.invoiceNumber}</TableCell>
+                            <TableCell>{sale.date}</TableCell>
+                            <TableCell>{sale.customerName}</TableCell>
+                            <TableCell>{sale.itemDescription}</TableCell>
+                            <TableCell className="text-right">{sale.quantity}</TableCell>
+                            <TableCell className="text-right">₹{sale.rate.toLocaleString()}</TableCell>
+                            <TableCell className="text-right">₹{sale.taxableValue.toLocaleString()}</TableCell>
+                            <TableCell className="text-right">₹{sale.gstAmount.toLocaleString()}</TableCell>
+                            <TableCell className="text-right">₹{sale.invoiceTotal.toLocaleString()}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+
+              {/* Purchase Register Data */}
+              {viewingDocument?.documentType === 'purchase_register' && extractedData.data?.purchases && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Purchase Register</h3>
+                  <div className="mb-4 grid grid-cols-4 gap-4">
+                    <div className="bg-blue-50 p-3 rounded">
+                      <p className="text-sm text-gray-600">Total Purchases</p>
+                      <p className="text-xl font-bold">{extractedData.data.purchases.length}</p>
+                    </div>
+                    <div className="bg-green-50 p-3 rounded">
+                      <p className="text-sm text-gray-600">Total Invoice Value</p>
+                      <p className="text-xl font-bold">₹{extractedData.data.totalInvoiceValue?.toLocaleString()}</p>
+                    </div>
+                    <div className="bg-yellow-50 p-3 rounded">
+                      <p className="text-sm text-gray-600">Total Taxable Value</p>
+                      <p className="text-xl font-bold">₹{extractedData.data.totalTaxableValue?.toLocaleString()}</p>
+                    </div>
+                    <div className="bg-purple-50 p-3 rounded">
+                      <p className="text-sm text-gray-600">Total GST Amount</p>
+                      <p className="text-xl font-bold">₹{extractedData.data.totalGstAmount?.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Invoice No</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Vendor</TableHead>
+                          <TableHead>Item</TableHead>
+                          <TableHead className="text-right">Qty</TableHead>
+                          <TableHead className="text-right">Rate</TableHead>
+                          <TableHead className="text-right">Taxable Value</TableHead>
+                          <TableHead className="text-right">GST Amount</TableHead>
+                          <TableHead className="text-right">Invoice Total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {extractedData.data.purchases.map((purchase: any, index: number) => (
+                          <TableRow key={index}>
+                            <TableCell>{purchase.invoiceNumber}</TableCell>
+                            <TableCell>{purchase.date}</TableCell>
+                            <TableCell>{purchase.vendorName}</TableCell>
+                            <TableCell>{purchase.itemDescription}</TableCell>
+                            <TableCell className="text-right">{purchase.quantity}</TableCell>
+                            <TableCell className="text-right">₹{purchase.rate.toLocaleString()}</TableCell>
+                            <TableCell className="text-right">₹{purchase.taxableValue.toLocaleString()}</TableCell>
+                            <TableCell className="text-right">₹{purchase.gstAmount.toLocaleString()}</TableCell>
+                            <TableCell className="text-right">₹{purchase.invoiceTotal.toLocaleString()}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500 mb-4">No extracted data available for this document.</p>
+
+              {/* Debug information */}
+              <div className="text-left bg-gray-50 p-4 rounded max-w-2xl mx-auto">
+                <h4 className="font-medium mb-2">Debug Information:</h4>
+                <div className="text-sm space-y-1">
+                  <p><strong>Document ID:</strong> {viewingDocument?.id}</p>
+                  <p><strong>Document Type:</strong> {viewingDocument?.documentType}</p>
+                  <p><strong>File Name:</strong> {viewingDocument?.fileName}</p>
+                  <p><strong>Original Name:</strong> {viewingDocument?.originalName}</p>
+                  <p><strong>Status:</strong> {viewingDocument?.status}</p>
+                  <p><strong>Extracted Data Found:</strong> {extractedData ? 'Yes' : 'No'}</p>
+                  {extractedData && (
+                    <>
+                      <p><strong>Data Type:</strong> {typeof extractedData.data}</p>
+                      <p><strong>Data Keys:</strong> {extractedData.data ? Object.keys(extractedData.data).join(', ') : 'None'}</p>
+                    </>
+                  )}
+                </div>
+
+                {extractedData?.data && (
+                  <div className="mt-4">
+                    <h5 className="font-medium mb-2">Raw Data:</h5>
+                    <pre className="text-xs bg-white p-2 rounded border overflow-auto max-h-40">
+                      {JSON.stringify(extractedData.data, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </PageLayout>
   );
 }

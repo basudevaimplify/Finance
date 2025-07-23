@@ -6,10 +6,36 @@ import { storage } from "./storage";
 // import { setupAuth, simpleAuth } from "./replitAuth";
 
 // Simple authentication middleware for migration
-const simpleAuth = (req: any, res: any, next: any) => {
-  // For migration purposes, allow all requests to pass through
-  // In production, this should be replaced with proper authentication
-  next();
+const simpleAuth = async (req: any, res: any, next: any) => {
+  try {
+    // For migration purposes, set up a demo user context
+    // In production, this should be replaced with proper authentication
+    const demoUserInfo = await ensureDemoUserExists();
+
+    req.user = {
+      claims: {
+        sub: demoUserInfo.userId  // Use actual demo user ID
+      },
+      userId: demoUserInfo.userId,
+      email: 'demo@example.com',
+      tenantId: demoUserInfo.tenantId,
+      role: 'admin'
+    };
+    next();
+  } catch (error) {
+    console.error('Auth setup error:', error);
+    // Fallback to hardcoded values if demo user setup fails
+    req.user = {
+      claims: {
+        sub: 'c7f1d8c2-df4e-4d3a-93b1-2de2b6cf2f18'
+      },
+      userId: 'c7f1d8c2-df4e-4d3a-93b1-2de2b6cf2f18',
+      email: 'demo@example.com',
+      tenantId: '550e8400-e29b-41d4-a716-446655440000',
+      role: 'admin'
+    };
+    next();
+  }
 };
 import { fileProcessorService } from "./services/fileProcessor";
 import { langGraphOrchestrator } from "./services/langGraph";
@@ -32,19 +58,128 @@ function formatCurrency(amount: number): string {
   return `Rs ${amount.toLocaleString('en-IN')}`;
 }
 
-// No authentication middleware - allow all requests through
-const noAuth = (req: any, res: any, next: any) => {
-  // Set a default user context for compatibility with existing code
-  req.user = {
-    claims: {
-      sub: 'demo-user'
-    },
-    userId: 'demo-user',
-    email: 'demo@example.com',
-    tenantId: null, // Will be handled by individual routes if needed
-    role: 'admin'
-  };
-  next();
+// Add this function to your server/routes.ts file to replace the existing ensureDemoUserExists
+
+async function ensureDemoUserExists(): Promise<{ userId: string; tenantId: string }> {
+  try {
+    const demoEmail = 'demo@example.com';
+    const fallbackTenantId = 'c95a3b96-fa76-48bb-9379-f5a05d47ae7f';
+    
+    console.log('Checking if demo user exists...');
+    
+    // First check if user exists by email
+    let existingUser = await storage.getUserByEmail(demoEmail);
+    
+    if (existingUser) {
+      console.log('Demo user already exists:', existingUser.id);
+      console.log('Demo user tenant ID:', existingUser.tenantId);
+      
+      // Return the existing user's actual ID and tenant
+      return {
+        userId: existingUser.id,
+        tenantId: existingUser.tenantId || fallbackTenantId
+      };
+    }
+    
+    // User doesn't exist, create it
+    console.log('Demo user does not exist, creating...');
+    
+    // Ensure tenant exists first
+    let tenant = await storage.getTenant(fallbackTenantId);
+    if (!tenant) {
+      console.log('Creating fallback tenant...');
+      tenant = await storage.createTenant({
+        id: fallbackTenantId,
+        companyName: 'Demo Company',
+        subscriptionPlan: 'enterprise',
+        isActive: true,
+      });
+    }
+    
+    // Create demo user with a generated ID
+    const demoUser = await storage.createUser({
+      email: demoEmail,
+      firstName: 'Demo',
+      lastName: 'User',
+      tenantId: fallbackTenantId,
+      isActive: true,
+    });
+    
+    console.log('Demo user created successfully:', demoUser.id);
+    
+    return {
+      userId: demoUser.id,
+      tenantId: demoUser.tenantId
+    };
+    
+  } catch (error) {
+    console.error('Error ensuring demo user exists:', error);
+    
+    // If there's an error, try to get the existing user by email
+    try {
+      const existingUser = await storage.getUserByEmail('demo@example.com');
+      if (existingUser) {
+        return {
+          userId: existingUser.id,
+          tenantId: existingUser.tenantId || 'c95a3b96-fa76-48bb-9379-f5a05d47ae7f'
+        };
+      }
+    } catch (fallbackError) {
+      console.error('Fallback user lookup also failed:', fallbackError);
+    }
+    
+    // Last resort: return the fallback values
+    return {
+      userId: 'c7f1d8c2-df4e-4d3a-93b1-2de2b6cf2f18', // Use the actual user ID from your logs
+      tenantId: '550e8400-e29b-41d4-a716-446655440000'   // Use the actual tenant ID from your logs
+    };
+  }
+}
+
+// Update your noAuth middleware to use the correct user ID
+const noAuth = async (req: any, res: any, next: any) => {
+  try {
+    // Get the actual demo user info
+    const demoUserInfo = await ensureDemoUserExists();
+    
+    // Set user context with the correct IDs
+    req.user = {
+      claims: {
+        sub: demoUserInfo.userId  // Use the actual user ID from database
+      },
+      userId: demoUserInfo.userId,  // Use the actual user ID from database
+      email: 'demo@example.com',
+      tenantId: demoUserInfo.tenantId,  // Use the actual tenant ID from database
+      role: 'admin'
+    };
+    
+    console.log('User context set:', {
+      userId: req.user.userId,
+      tenantId: req.user.tenantId
+    });
+    
+    next();
+  } catch (error) {
+    console.error('Auth setup error:', error);
+    
+    // Even if demo user setup fails, use the known working IDs from your logs
+    req.user = {
+      claims: {
+        sub: 'c7f1d8c2-df4e-4d3a-93b1-2de2b6cf2f18'  // Actual user ID from your logs
+      },
+      userId: 'c7f1d8c2-df4e-4d3a-93b1-2de2b6cf2f18',  // Actual user ID from your logs
+      email: 'demo@example.com',
+      tenantId: '550e8400-e29b-41d4-a716-446655440000',  // Actual tenant ID from your logs
+      role: 'admin'
+    };
+    
+    console.log('Using fallback user context:', {
+      userId: req.user.userId,
+      tenantId: req.user.tenantId
+    });
+    
+    next();
+  }
 };
 
 // Admin middleware to check admin role
@@ -226,10 +361,283 @@ function generateSampleDataForDocument(docType: string, fileName: string) {
           amount: Math.floor(Math.random() * 1500000) + 300000
         }
       ]
+    },
+    journal: {
+      documentType: 'journal',
+      generatedFrom: 'source_documents',
+      totalEntries: 4,
+      entries: [
+        {
+          journalId: fileName.includes('test') ? "TEST-JE-2025-001_DR" : "JE-2025-001_DR",
+          date: "2025-01-15",
+          accountCode: "5100",
+          accountName: "Vendor Expenses",
+          debitAmount: Math.floor(Math.random() * 500000) + 100000,
+          creditAmount: 0,
+          narration: "Vendor Invoice - VI-2025-001 - TechCorp Solutions",
+          entity: "TechCorp Solutions",
+          sourceDocumentId: "sample-vendor-invoice-1"
+        },
+        {
+          journalId: fileName.includes('test') ? "TEST-JE-2025-001_CR" : "JE-2025-001_CR",
+          date: "2025-01-15",
+          accountCode: "2100",
+          accountName: "Accounts Payable",
+          debitAmount: 0,
+          creditAmount: Math.floor(Math.random() * 500000) + 100000,
+          narration: "Vendor Invoice - VI-2025-001 - TechCorp Solutions",
+          entity: "TechCorp Solutions",
+          sourceDocumentId: "sample-vendor-invoice-1"
+        },
+        {
+          journalId: fileName.includes('test') ? "TEST-JE-2025-002_DR" : "JE-2025-002_DR",
+          date: "2025-01-16",
+          accountCode: "1200",
+          accountName: "Accounts Receivable",
+          debitAmount: Math.floor(Math.random() * 300000) + 75000,
+          creditAmount: 0,
+          narration: "Sales Invoice - SR-2025-001 - Global Enterprises",
+          entity: "Global Enterprises",
+          sourceDocumentId: "sample-sales-register-1"
+        },
+        {
+          journalId: fileName.includes('test') ? "TEST-JE-2025-002_CR" : "JE-2025-002_CR",
+          date: "2025-01-16",
+          accountCode: "4100",
+          accountName: "Sales Revenue",
+          debitAmount: 0,
+          creditAmount: Math.floor(Math.random() * 300000) + 75000,
+          narration: "Sales Invoice - SR-2025-001 - Global Enterprises",
+          entity: "Global Enterprises",
+          sourceDocumentId: "sample-sales-register-1"
+        }
+      ],
+      summary: {
+        totalDebits: Math.floor(Math.random() * 800000) + 200000,
+        totalCredits: Math.floor(Math.random() * 800000) + 200000,
+        uniqueAccounts: 4,
+        balanceCheck: true
+      },
+      sourceDocuments: [
+        {
+          documentId: "sample-vendor-invoice-1",
+          documentName: "Vendor Invoice - TechCorp",
+          documentType: "vendor_invoice",
+          entriesGenerated: 2
+        },
+        {
+          documentId: "sample-sales-register-1",
+          documentName: "Sales Register - Q1 2025",
+          documentType: "sales_register",
+          entriesGenerated: 2
+        }
+      ]
+    },
+    trial_balance: {
+      entries: [
+        {
+          accountCode: "1000",
+          accountName: "Cash and Bank",
+          debitBalance: Math.floor(Math.random() * 2000000) + 500000,
+          creditBalance: 0,
+          entity: "Company Assets"
+        },
+        {
+          accountCode: "2100",
+          accountName: "Accounts Payable",
+          debitBalance: 0,
+          creditBalance: Math.floor(Math.random() * 800000) + 200000,
+          entity: "Company Liabilities"
+        },
+        {
+          accountCode: "5100",
+          accountName: "Operating Expenses",
+          debitBalance: Math.floor(Math.random() * 1500000) + 300000,
+          creditBalance: 0,
+          entity: "Company Expenses"
+        }
+      ],
+      totalDebits: Math.floor(Math.random() * 4000000) + 1000000,
+      totalCredits: Math.floor(Math.random() * 4000000) + 1000000,
+      isBalanced: true
     }
   };
 
   return (baseData as any)[docType] || {};
+}
+
+// Generate journal entries from real document data
+function generateJournalEntriesFromDocument(document: any): any[] {
+  const entries = [];
+  const extractedData = document.extractedData;
+  const documentType = document.documentType;
+  const documentDate = new Date();
+
+  console.log(`Generating journal entries for ${documentType} document: ${document.originalName}`);
+
+  switch (documentType) {
+    case 'vendor_invoice':
+      if (extractedData?.invoices) {
+        extractedData.invoices.forEach((invoice: any, index: number) => {
+          const amount = parseFloat(invoice.amount || invoice.totalAmount || '0');
+          const journalId = `JE${Date.now()}_${index}`;
+
+          // Debit: Expense Account
+          entries.push({
+            journalId: `${journalId}_DR`,
+            date: new Date(invoice.invoiceDate || documentDate),
+            accountCode: '5100',
+            accountName: 'Vendor Expenses',
+            debitAmount: amount.toString(),
+            creditAmount: '0',
+            narration: `Vendor Invoice - ${invoice.invoiceNumber || 'N/A'} - ${invoice.vendorName || 'Unknown Vendor'}`,
+            entity: invoice.vendorName || 'Unknown Vendor',
+          });
+
+          // Credit: Accounts Payable
+          entries.push({
+            journalId: `${journalId}_CR`,
+            date: new Date(invoice.invoiceDate || documentDate),
+            accountCode: '2100',
+            accountName: 'Accounts Payable',
+            debitAmount: '0',
+            creditAmount: amount.toString(),
+            narration: `Vendor Invoice - ${invoice.invoiceNumber || 'N/A'} - ${invoice.vendorName || 'Unknown Vendor'}`,
+            entity: invoice.vendorName || 'Unknown Vendor',
+          });
+        });
+      }
+      break;
+
+    case 'sales_register':
+      if (extractedData?.sales) {
+        extractedData.sales.forEach((sale: any, index: number) => {
+          const amount = parseFloat(sale.totalAmount || sale.amount || '0');
+          const journalId = `JE${Date.now()}_${index}`;
+
+          // Debit: Accounts Receivable
+          entries.push({
+            journalId: `${journalId}_DR`,
+            date: new Date(sale.saleDate || sale.invoiceDate || documentDate),
+            accountCode: '1200',
+            accountName: 'Accounts Receivable',
+            debitAmount: amount.toString(),
+            creditAmount: '0',
+            narration: `Sales Invoice - ${sale.invoiceNumber || 'N/A'} - ${sale.customerName || 'Unknown Customer'}`,
+            entity: sale.customerName || 'Unknown Customer',
+          });
+
+          // Credit: Sales Revenue
+          entries.push({
+            journalId: `${journalId}_CR`,
+            date: new Date(sale.saleDate || sale.invoiceDate || documentDate),
+            accountCode: '4100',
+            accountName: 'Sales Revenue',
+            debitAmount: '0',
+            creditAmount: amount.toString(),
+            narration: `Sales Invoice - ${sale.invoiceNumber || 'N/A'} - ${sale.customerName || 'Unknown Customer'}`,
+            entity: sale.customerName || 'Unknown Customer',
+          });
+        });
+      }
+      break;
+
+    case 'bank_statement':
+      if (extractedData?.transactions) {
+        extractedData.transactions.forEach((transaction: any, index: number) => {
+          const debitAmount = parseFloat(transaction.debit || '0');
+          const creditAmount = parseFloat(transaction.credit || '0');
+          const journalId = `JE${Date.now()}_${index}`;
+
+          if (debitAmount > 0) {
+            // Bank account debit (money going out)
+            entries.push({
+              journalId: `${journalId}_DR`,
+              date: new Date(transaction.date || documentDate),
+              accountCode: '5200',
+              accountName: 'Bank Charges/Expenses',
+              debitAmount: debitAmount.toString(),
+              creditAmount: '0',
+              narration: `Bank Transaction - ${transaction.description || 'Bank Debit'}`,
+              entity: 'Bank',
+            });
+
+            entries.push({
+              journalId: `${journalId}_CR`,
+              date: new Date(transaction.date || documentDate),
+              accountCode: '1000',
+              accountName: 'Bank Account',
+              debitAmount: '0',
+              creditAmount: debitAmount.toString(),
+              narration: `Bank Transaction - ${transaction.description || 'Bank Debit'}`,
+              entity: 'Bank',
+            });
+          }
+
+          if (creditAmount > 0) {
+            // Bank account credit (money coming in)
+            entries.push({
+              journalId: `${journalId}_DR`,
+              date: new Date(transaction.date || documentDate),
+              accountCode: '1000',
+              accountName: 'Bank Account',
+              debitAmount: creditAmount.toString(),
+              creditAmount: '0',
+              narration: `Bank Transaction - ${transaction.description || 'Bank Credit'}`,
+              entity: 'Bank',
+            });
+
+            entries.push({
+              journalId: `${journalId}_CR`,
+              date: new Date(transaction.date || documentDate),
+              accountCode: '4200',
+              accountName: 'Other Income',
+              debitAmount: '0',
+              creditAmount: creditAmount.toString(),
+              narration: `Bank Transaction - ${transaction.description || 'Bank Credit'}`,
+              entity: 'Bank',
+            });
+          }
+        });
+      }
+      break;
+
+    case 'purchase_register':
+      if (extractedData?.purchases) {
+        extractedData.purchases.forEach((purchase: any, index: number) => {
+          const amount = parseFloat(purchase.amount || purchase.totalAmount || '0');
+          const journalId = `JE${Date.now()}_${index}`;
+
+          // Debit: Inventory/Purchases
+          entries.push({
+            journalId: `${journalId}_DR`,
+            date: new Date(purchase.purchaseDate || documentDate),
+            accountCode: '1300',
+            accountName: 'Inventory/Purchases',
+            debitAmount: amount.toString(),
+            creditAmount: '0',
+            narration: `Purchase - ${purchase.purchaseOrder || 'N/A'} - ${purchase.vendorName || 'Unknown Vendor'}`,
+            entity: purchase.vendorName || 'Unknown Vendor',
+          });
+
+          // Credit: Accounts Payable
+          entries.push({
+            journalId: `${journalId}_CR`,
+            date: new Date(purchase.purchaseDate || documentDate),
+            accountCode: '2100',
+            accountName: 'Accounts Payable',
+            debitAmount: '0',
+            creditAmount: amount.toString(),
+            narration: `Purchase - ${purchase.purchaseOrder || 'N/A'} - ${purchase.vendorName || 'Unknown Vendor'}`,
+            entity: purchase.vendorName || 'Unknown Vendor',
+          });
+        });
+      }
+      break;
+  }
+
+  console.log(`Generated ${entries.length} journal entries for ${documentType}`);
+  return entries;
 }
 
 // Configure multer for file uploads
@@ -411,6 +819,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post('/api/auth/logout', async (req, res) => {
     res.json({ success: true, message: 'Logged out successfully' });
+  });
+
+  // Add a GET route for /logout that redirects to the home page
+  app.get('/logout', (req, res) => {
+    res.redirect('/');
   });
 
   // Remove duplicate route - already defined above
@@ -863,6 +1276,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate journal entries from a specific document
+  app.post('/api/documents/:id/generate-journal', noAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.userId;
+
+      // Get user's tenant for security
+      const user = await storage.getUser(userId);
+      if (!user?.tenantId) {
+        return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
+      }
+
+      // Get document
+      const document = await storage.getDocument(id);
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+
+      // Check if document has extracted data
+      if (!document.extractedData) {
+        return res.status(400).json({ message: "Document must be processed and have extracted data before generating journal entries" });
+      }
+
+      // Check if journal entries already exist for this document
+      const existingEntries = await storage.getJournalEntries(document.id, user.tenantId);
+      if (existingEntries.length > 0) {
+        return res.status(400).json({
+          message: "Journal entries already exist for this document",
+          existingEntries: existingEntries.length
+        });
+      }
+
+      // Generate journal entries using the langGraph orchestrator
+      const journalEntries = langGraphOrchestrator.generateDefaultJournalEntries(document, document.extractedData);
+
+      if (!journalEntries || journalEntries.length === 0) {
+        return res.status(400).json({ message: "No journal entries could be generated from this document" });
+      }
+
+      // Create journal entries in the database
+      const createdEntries = [];
+      for (const entry of journalEntries) {
+        const journalEntry = {
+          ...entry,
+          documentId: document.id,
+          tenantId: user.tenantId,
+          createdBy: userId,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+
+        const created = await storage.createJournalEntry(journalEntry);
+        createdEntries.push(created);
+      }
+
+      console.log(`Generated ${createdEntries.length} journal entries for document: ${document.originalName}`);
+
+      res.json({
+        message: `Successfully generated ${createdEntries.length} journal entries for ${document.originalName}`,
+        documentId: document.id,
+        documentName: document.originalName,
+        entriesCreated: createdEntries.length,
+        entries: createdEntries
+      });
+    } catch (error) {
+      console.error("Error generating journal entries for document:", error);
+      res.status(500).json({ message: "Failed to generate journal entries" });
+    }
+  });
+
   // Get documents
   app.get('/api/documents', noAuth, async (req: any, res) => {
     try {
@@ -1035,14 +1518,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.userId;
       const documentId = req.query.documentId as string;
       const period = req.query.period as string;
-      
+      const generated = req.query.generated === 'true';
+
       // SECURITY: Get user's tenant_id for data isolation
       const user = await storage.getUser(userId);
       if (!user?.tenantId) {
         console.error(`Security violation: User ${userId} attempted to access journal entries without tenant assignment`);
         return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
       }
-      
+
       let entries;
       if (documentId) {
         entries = await storage.getJournalEntries(documentId, user.tenantId);
@@ -1051,11 +1535,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         entries = await storage.getJournalEntries(undefined, user.tenantId);
       }
-      
+
+      // Filter to only show generated entries (those with documentId) if requested
+      if (generated) {
+        entries = entries.filter(entry => entry.documentId && entry.documentId.trim() !== '');
+        console.log(`Filtered to ${entries.length} generated journal entries (with documentId)`);
+      }
+
       res.json(entries);
     } catch (error) {
       console.error("Error fetching journal entries:", error);
       res.status(500).json({ message: "Failed to fetch journal entries" });
+    }
+  });
+
+
+
+  // Delete all journal entries for a document
+  app.delete('/api/documents/:id/journal-entries', noAuth, async (req: any, res) => {
+    try {
+      const { id: documentId } = req.params;
+      const userId = req.user.userId;
+
+      // SECURITY: Get user's tenant_id for data isolation
+      const user = await storage.getUser(userId);
+      if (!user?.tenantId) {
+        console.error(`Security violation: User ${userId} attempted to delete journal entries without tenant assignment`);
+        return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
+      }
+
+      // Verify document exists and belongs to user's tenant
+      const document = await storage.getDocument(documentId);
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+
+      // Get existing entries count for logging
+      const existingEntries = await storage.getJournalEntries(documentId, user.tenantId);
+      const entryCount = existingEntries.length;
+
+      await storage.deleteJournalEntriesByDocument(documentId);
+
+      console.log(`Deleted ${entryCount} journal entries for document ${documentId} by user ${userId}`);
+      res.json({
+        message: `Successfully deleted ${entryCount} journal entries for document ${document.originalName}`,
+        deletedCount: entryCount
+      });
+    } catch (error) {
+      console.error("Error deleting journal entries for document:", error);
+      res.status(500).json({ message: "Failed to delete journal entries" });
+    }
+  });
+
+  // Delete all generated journal entries
+  app.delete('/api/journal-entries', noAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.userId;
+
+      // SECURITY: Get user's tenant_id for data isolation
+      const user = await storage.getUser(userId);
+      if (!user?.tenantId) {
+        console.error(`Security violation: User ${userId} attempted to delete all journal entries without tenant assignment`);
+        return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
+      }
+
+      // Get all generated entries (those with documentId)
+      const allEntries = await storage.getJournalEntries(undefined, user.tenantId);
+      const generatedEntries = allEntries.filter(entry => entry.documentId && entry.documentId.trim() !== '');
+
+      // Delete each generated entry
+      for (const entry of generatedEntries) {
+        await storage.deleteJournalEntry(entry.id);
+      }
+
+      console.log(`Deleted ${generatedEntries.length} generated journal entries by user ${userId}`);
+      res.json({
+        message: `Successfully deleted ${generatedEntries.length} generated journal entries`,
+        deletedCount: generatedEntries.length
+      });
+    } catch (error) {
+      console.error("Error deleting all journal entries:", error);
+      res.status(500).json({ message: "Failed to delete journal entries" });
     }
   });
 
@@ -1074,15 +1634,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
       }
       
-      // Get documents for this tenant
-      const documents = await storage.getDocuments(userId);
-      console.log(`Found ${documents.length} documents for user ${userId}`);
-      
+      // Get documents for this tenant - only process source documents (vendor_invoice, sales_register, bank_statement)
+      const allDocuments = await storage.getDocuments(userId);
+      const sourceDocuments = allDocuments.filter(doc =>
+        ['vendor_invoice', 'sales_register', 'bank_statement', 'purchase_register'].includes(doc.documentType)
+      );
+      console.log(`Found ${sourceDocuments.length} source documents for journal entry generation`);
+
       let processedDocuments = 0;
       let skippedDocuments = 0;
       const createdEntries = [];
-      
-      for (const doc of documents) {
+      const sourceDocumentData = [];
+
+      for (const doc of sourceDocuments) {
         // Check if document already has journal entries (duplication prevention)
         const existingEntries = await storage.getJournalEntries(doc.id, user.tenantId);
         if (existingEntries.length > 0) {
@@ -1090,31 +1654,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
           skippedDocuments++;
           continue;
         }
-        
-        // Generate journal entries using LangGraph orchestrator
-        const defaultEntries = langGraphOrchestrator.generateDefaultJournalEntries(doc, doc.extractedData);
-        
-        for (const entry of defaultEntries) {
+
+        // Generate journal entries using real extracted data from the document
+        const journalEntries = generateJournalEntriesFromDocument(doc);
+
+        for (const entry of journalEntries) {
           const journalEntry = await storage.createJournalEntry({
             ...entry,
-            tenantId: user.tenantId
+            tenantId: user.tenantId,
+            documentId: doc.id
           });
           createdEntries.push(journalEntry);
         }
-        
+
+        // Store source document info for the generated document
+        sourceDocumentData.push({
+          documentId: doc.id,
+          documentName: doc.originalName,
+          documentType: doc.documentType,
+          extractedData: doc.extractedData,
+          entriesGenerated: journalEntries.length
+        });
+
         processedDocuments++;
       }
       
       console.log(`Journal entry generation completed: ${processedDocuments} documents processed, ${skippedDocuments} skipped, ${createdEntries.length} entries created`);
-      
+
+      // Create a document for the generated journal entries if any were created
+      let generatedDocument = null;
+      if (createdEntries.length > 0) {
+        const fileName = `journal_entries_${new Date().toISOString().split('T')[0]}_${Date.now()}.json`;
+        generatedDocument = await storage.createDocument({
+          fileName: fileName,
+          originalName: `Journal Entries - Generated from ${sourceDocumentData.length} Documents`,
+          mimeType: 'application/json',
+          fileSize: JSON.stringify(createdEntries).length,
+          filePath: `generated/${fileName}`,
+          documentType: 'journal',
+          status: 'extracted',
+          uploadedBy: userId,
+          tenantId: user.tenantId,
+          metadata: {
+            generated: true,
+            generatedAt: new Date().toISOString(),
+            reportType: 'journal_entries',
+            sourceDocuments: sourceDocumentData.map(doc => ({
+              id: doc.documentId,
+              name: doc.documentName,
+              type: doc.documentType,
+              entriesGenerated: doc.entriesGenerated
+            }))
+          },
+          extractedData: {
+            documentType: 'journal',
+            generatedFrom: 'source_documents',
+            sourceDocuments: sourceDocumentData,
+            totalEntries: createdEntries.length,
+            processedDocuments: processedDocuments,
+            skippedDocuments: skippedDocuments,
+            entries: createdEntries.map(entry => ({
+              journalId: entry.journalId,
+              date: entry.date,
+              accountCode: entry.accountCode,
+              accountName: entry.accountName,
+              debitAmount: parseFloat(entry.debitAmount || '0'),
+              creditAmount: parseFloat(entry.creditAmount || '0'),
+              narration: entry.narration,
+              entity: entry.entity,
+              sourceDocumentId: entry.documentId
+            })),
+            summary: {
+              totalDebits: createdEntries.reduce((sum, entry) => sum + parseFloat(entry.debitAmount || '0'), 0),
+              totalCredits: createdEntries.reduce((sum, entry) => sum + parseFloat(entry.creditAmount || '0'), 0),
+              uniqueAccounts: [...new Set(createdEntries.map(entry => entry.accountCode))].length,
+              balanceCheck: Math.abs(
+                createdEntries.reduce((sum, entry) => sum + parseFloat(entry.debitAmount || '0'), 0) -
+                createdEntries.reduce((sum, entry) => sum + parseFloat(entry.creditAmount || '0'), 0)
+              ) < 0.01
+            }
+          }
+        });
+      }
+
       res.json({
-        message: processedDocuments > 0 
+        message: processedDocuments > 0
           ? `Successfully generated ${createdEntries.length} journal entries from ${processedDocuments} documents`
           : `No new journal entries generated. ${skippedDocuments} documents already have journal entries`,
         processedDocuments,
         skippedDocuments,
         createdEntries: createdEntries.length,
-        entries: createdEntries
+        entries: createdEntries,
+        documentId: generatedDocument?.id
       });
     } catch (error) {
       console.error("Error generating journal entries:", error);
@@ -1311,18 +1942,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const userId = req.user.claims.sub;
-      
+
+      // Get user's tenant_id for audit trail
+      const user = await storage.getUser(userId);
+      if (!user?.tenantId) {
+        console.error(`Security violation: User ${userId} attempted to delete journal entry without tenant assignment`);
+        return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
+      }
+
       await storage.deleteJournalEntry(id);
-      
+
       // Create audit trail
       await storage.createAuditTrail({
         entityType: 'journal_entry',
         entityId: id,
         action: 'delete',
         userId,
+        tenantId: user.tenantId,
         details: { deletedBy: userId }
       });
-      
+
       res.json({ message: "Journal entry deleted successfully" });
     } catch (error) {
       console.error("Error deleting journal entry:", error);
@@ -1423,19 +2062,351 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Seed database with vendor invoice data
+  app.post('/api/seed-vendor-data', simpleAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+
+      // Get user's tenant
+      const user = await storage.getUser(userId);
+      if (!user || !user.tenantId) {
+        return res.status(400).json({ message: "User or tenant not found" });
+      }
+
+      // Sample vendor invoice data
+      const vendorInvoices = [
+        {
+          fileName: "vendor_invoice_abc_corp_2025_001.pdf",
+          originalName: "ABC Corp Invoice - January 2025.pdf",
+          documentType: "vendor_invoice",
+          extractedData: {
+            invoices: [
+              {
+                invoiceNumber: "ABC-INV-2025-001",
+                vendorName: "ABC Corporation Ltd",
+                invoiceDate: "2025-01-15",
+                amount: 125000,
+                gstin: "09ABCDE1234F1Z5",
+                status: "paid",
+                taxableValue: 105932,
+                cgst: 9534,
+                sgst: 9534,
+                totalTax: 19068
+              }
+            ]
+          }
+        },
+        {
+          fileName: "vendor_invoice_tech_solutions_2025_002.pdf",
+          originalName: "TechCorp Solutions Invoice - January 2025.pdf",
+          documentType: "vendor_invoice",
+          extractedData: {
+            invoices: [
+              {
+                invoiceNumber: "TECH-INV-2025-002",
+                vendorName: "TechCorp Solutions Pvt Ltd",
+                invoiceDate: "2025-01-20",
+                amount: 89500,
+                gstin: "09DEFGH5678K2Y6",
+                status: "pending",
+                taxableValue: 75847,
+                cgst: 6826,
+                sgst: 6827,
+                totalTax: 13653
+              }
+            ]
+          }
+        },
+        {
+          fileName: "vendor_invoice_office_supplies_2025_003.pdf",
+          originalName: "Office Supplies Ltd Invoice - January 2025.pdf",
+          documentType: "vendor_invoice",
+          extractedData: {
+            invoices: [
+              {
+                invoiceNumber: "OS-INV-2025-003",
+                vendorName: "Office Supplies Ltd",
+                invoiceDate: "2025-01-25",
+                amount: 45600,
+                gstin: "09HIJKL9012M3N7",
+                status: "paid",
+                taxableValue: 38644,
+                cgst: 3478,
+                sgst: 3478,
+                totalTax: 6956
+              }
+            ]
+          }
+        },
+        {
+          fileName: "vendor_invoice_global_vendor_2025_004.pdf",
+          originalName: "Global Vendor Inc Invoice - February 2025.pdf",
+          documentType: "vendor_invoice",
+          extractedData: {
+            invoices: [
+              {
+                invoiceNumber: "GV-INV-2025-004",
+                vendorName: "Global Vendor Inc",
+                invoiceDate: "2025-02-01",
+                amount: 234500,
+                gstin: "09OPQRS3456T4U8",
+                status: "pending",
+                taxableValue: 198729,
+                cgst: 17886,
+                sgst: 17885,
+                totalTax: 35771
+              }
+            ]
+          }
+        },
+        {
+          fileName: "vendor_invoice_industrial_corp_2025_005.pdf",
+          originalName: "Industrial Corp Invoice - February 2025.pdf",
+          documentType: "vendor_invoice",
+          extractedData: {
+            invoices: [
+              {
+                invoiceNumber: "IC-INV-2025-005",
+                vendorName: "Industrial Corp Ltd",
+                invoiceDate: "2025-02-05",
+                amount: 156700,
+                gstin: "09VWXYZ7890A5B9",
+                status: "paid",
+                taxableValue: 132881,
+                cgst: 11959,
+                sgst: 11960,
+                totalTax: 23919
+              }
+            ]
+          }
+        }
+      ];
+
+      let createdCount = 0;
+      for (const invoiceData of vendorInvoices) {
+        try {
+          const document = await storage.createDocument({
+            fileName: invoiceData.fileName,
+            originalName: invoiceData.originalName,
+            mimeType: "application/pdf",
+            fileSize: 1024000, // 1MB placeholder
+            filePath: `/uploads/${invoiceData.fileName}`,
+            documentType: invoiceData.documentType as any,
+            status: "extracted",
+            uploadedBy: userId,
+            tenantId: user.tenantId,
+            metadata: { period: 'Q1_2025', source: 'seed_data' },
+            extractedData: invoiceData.extractedData,
+            validationErrors: null
+          });
+          createdCount++;
+          console.log(`Created vendor invoice document: ${document.id}`);
+        } catch (error) {
+          console.error(`Error creating document ${invoiceData.fileName}:`, error);
+        }
+      }
+
+      res.json({
+        message: `Successfully seeded ${createdCount} vendor invoice documents`,
+        count: createdCount
+      });
+    } catch (error) {
+      console.error("Error seeding vendor data:", error);
+      res.status(500).json({ message: "Failed to seed vendor data" });
+    }
+  });
+
+  // Reprocess bank statement to extract real data
+  app.post('/api/reprocess-bank-statement', noAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.userId;
+      const { documentId } = req.body;
+
+      console.log('Reprocessing bank statement for document:', documentId);
+
+      // Get the document
+      const documents = await storage.getDocuments(userId);
+      const document = documents.find(doc => doc.id === documentId);
+
+      if (!document) {
+        return res.status(404).json({ message: 'Document not found' });
+      }
+
+      // Check if it's a bank statement
+      if (!document.fileName.toLowerCase().includes('bank') && !document.fileName.toLowerCase().includes('statement')) {
+        return res.status(400).json({ message: 'Document is not a bank statement' });
+      }
+
+      // Use the bank statement parser
+      const { bankStatementParser } = await import('./services/bankStatementParser');
+      const bankData = await bankStatementParser.parseBankStatement(document.filePath);
+
+      // Update document with extracted data
+      await storage.updateDocument(document.id, {
+        status: 'extracted',
+        extractedData: bankData,
+      });
+
+      console.log(`Successfully reprocessed bank statement with ${bankData.transactions.length} transactions`);
+
+      res.json({
+        message: 'Bank statement reprocessed successfully',
+        transactionCount: bankData.transactions.length,
+        data: bankData
+      });
+    } catch (error) {
+      console.error('Error reprocessing bank statement:', error);
+      res.status(500).json({ message: 'Failed to reprocess bank statement' });
+    }
+  });
+
+  // Update bank statement with real data
+  app.post('/api/update-bank-statement-data', noAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.userId;
+
+      console.log('Updating bank statement with real data for user:', userId);
+
+      // Get the bank statement document
+      const documents = await storage.getDocuments(userId);
+      const bankStatementDoc = documents.find(doc =>
+        doc.fileName.toLowerCase().includes('bank') &&
+        doc.fileName.toLowerCase().includes('statement')
+      );
+
+      if (!bankStatementDoc) {
+        return res.status(404).json({ message: 'Bank statement document not found' });
+      }
+
+      // Load the real bank statement data
+      const fs = await import('fs');
+      const realDataPath = './real_bank_statement_data.json';
+
+      if (!fs.existsSync(realDataPath)) {
+        return res.status(404).json({ message: 'Real bank statement data file not found' });
+      }
+
+      const realData = JSON.parse(fs.readFileSync(realDataPath, 'utf8'));
+
+      // Update document with real extracted data
+      await storage.updateDocument(bankStatementDoc.id, {
+        status: 'extracted',
+        extractedData: realData,
+      });
+
+      console.log(`Successfully updated bank statement with ${realData.transactions.length} real transactions`);
+
+      res.json({
+        message: 'Bank statement updated with real data successfully',
+        transactionCount: realData.transactions.length,
+        totalCredits: realData.totalCredits,
+        totalDebits: realData.totalDebits
+      });
+    } catch (error) {
+      console.error('Error updating bank statement with real data:', error);
+      res.status(500).json({ message: 'Failed to update bank statement with real data' });
+    }
+  });
+
+  // Update sales and purchase registers with real data
+  app.post('/api/update-excel-data', noAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.userId;
+
+      console.log('Updating Excel documents with real data for user:', userId);
+
+      // Get all documents
+      const documents = await storage.getDocuments(userId);
+
+      // Find sales and purchase register documents
+      const salesDoc = documents.find(doc =>
+        doc.fileName.toLowerCase().includes('sales') &&
+        doc.fileName.toLowerCase().includes('register')
+      );
+
+      const purchaseDoc = documents.find(doc =>
+        doc.fileName.toLowerCase().includes('purchase') &&
+        doc.fileName.toLowerCase().includes('register')
+      );
+
+      const results = [];
+
+      // Process sales register
+      if (salesDoc) {
+        try {
+          const { SalesRegisterParser } = await import('./services/excelParsers');
+          const salesData = SalesRegisterParser.parseSalesRegister(salesDoc.filePath);
+
+          await storage.updateDocument(salesDoc.id, {
+            status: 'extracted',
+            extractedData: salesData,
+          });
+
+          console.log(`Successfully updated sales register with ${salesData.recordCount} records`);
+          results.push({
+            type: 'sales_register',
+            message: 'Sales register updated successfully',
+            recordCount: salesData.recordCount,
+            totalInvoiceValue: salesData.totalInvoiceValue
+          });
+        } catch (error) {
+          console.error('Error updating sales register:', error);
+          results.push({
+            type: 'sales_register',
+            error: 'Failed to update sales register'
+          });
+        }
+      }
+
+      // Process purchase register
+      if (purchaseDoc) {
+        try {
+          const { PurchaseRegisterParser } = await import('./services/excelParsers');
+          const purchaseData = PurchaseRegisterParser.parsePurchaseRegister(purchaseDoc.filePath);
+
+          await storage.updateDocument(purchaseDoc.id, {
+            status: 'extracted',
+            extractedData: purchaseData,
+          });
+
+          console.log(`Successfully updated purchase register with ${purchaseData.recordCount} records`);
+          results.push({
+            type: 'purchase_register',
+            message: 'Purchase register updated successfully',
+            recordCount: purchaseData.recordCount,
+            totalInvoiceValue: purchaseData.totalInvoiceValue
+          });
+        } catch (error) {
+          console.error('Error updating purchase register:', error);
+          results.push({
+            type: 'purchase_register',
+            error: 'Failed to update purchase register'
+          });
+        }
+      }
+
+      res.json({
+        message: 'Excel documents processing completed',
+        results
+      });
+    } catch (error) {
+      console.error('Error updating Excel documents with real data:', error);
+      res.status(500).json({ message: 'Failed to update Excel documents with real data' });
+    }
+  });
+
   // Get extracted data for data tables
   app.get('/api/extracted-data', simpleAuth, async (req: any, res) => {
     try {
       const { period, docType } = req.query;
       const userId = req.user.claims.sub;
-      
+
       console.log('Fetching extracted data for:', { period, docType, userId });
-      
+
       // Get documents based on filters
       const documents = await storage.getDocuments(userId);
       console.log('Found documents:', documents.length);
-      
-      // For debugging, let's always return data for now
+
       // Filter by period if specified
       const filteredDocs = documents.filter(doc => {
         if (period && period !== 'all') {
@@ -1452,25 +2423,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const extractedData = filteredDocs.map(doc => {
         // Use the document type or infer from filename
         const inferredDocType = doc.documentType || inferDocumentType(doc.fileName);
-        const sampleData = generateSampleDataForDocument(inferredDocType, doc.fileName);
-        
-        console.log('Processing document:', doc.fileName, 'Type:', inferredDocType);
-        
+
+        // Use real extracted data if available, otherwise fall back to sample data
+        let documentData;
+        if (doc.extractedData && typeof doc.extractedData === 'object') {
+          // Use the actual extracted data from the database
+          documentData = doc.extractedData;
+          console.log('Using real extracted data for:', doc.fileName);
+        } else {
+          // Fall back to sample data for documents without extracted data
+          documentData = generateSampleDataForDocument(inferredDocType, doc.fileName);
+          console.log('Using sample data for:', doc.fileName, 'Type:', inferredDocType);
+        }
+
         return {
           id: doc.id,
           documentId: doc.id,
           documentType: inferredDocType,
           fileName: doc.fileName,
-          data: sampleData,
+          data: documentData,
           extractedAt: doc.updatedAt || doc.createdAt,
-          confidence: 0.95
+          confidence: doc.extractedData ? 0.95 : 0.75 // Lower confidence for sample data
         };
       });
 
       console.log('Extracted data count:', extractedData.length);
 
       // Filter by document type if specified
-      const finalData = docType && docType !== 'all' 
+      const finalData = docType && docType !== 'all'
         ? extractedData.filter(item => item.documentType === docType)
         : extractedData;
 
@@ -1552,39 +2532,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Generate trial balance (alias endpoint)
-  app.post('/api/trial-balance/generate', noAuth, async (req: any, res) => {
+  // Generate trial balance report endpoint
+  app.post('/api/reports/trial-balance/generate', noAuth, async (req: any, res) => {
     try {
       const userId = req.user.userId;
       const { period } = req.body;
-      
+
       console.log(`Trial Balance Generation Request: ${JSON.stringify({ userId, period })}`);
-      
+
       // SECURITY: Get user's tenant_id for data isolation
       const user = await storage.getUser(userId);
       if (!user?.tenantId) {
         return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
       }
-      
+
       // Get journal entries for the specified period and tenant
       const journalEntries = await storage.getJournalEntriesByPeriod(period || '2025', user.tenantId);
-      
+
       // Generate trial balance from journal entries
       const trialBalance = await financialReportsService.generateTrialBalance(journalEntries);
-      
+
+      // Format numbers as text to bypass frontend rendering issues
+      const formattedTrialBalance = {
+        ...trialBalance,
+        totalDebitsText: formatCurrency(trialBalance.totalDebits),
+        totalCreditsText: formatCurrency(trialBalance.totalCredits),
+        entries: trialBalance.entries.map((entry: any) => ({
+          ...entry,
+          debitBalanceText: formatCurrency(entry.debitBalance),
+          creditBalanceText: formatCurrency(entry.creditBalance)
+        }))
+      };
+
       // Save as financial statement
       await storage.createFinancialStatement({
         statementType: 'trial_balance',
         period: period || '2025',
-        data: trialBalance,
+        data: formattedTrialBalance,
         isValid: trialBalance.isBalanced,
         generatedBy: userId,
         tenantId: user.tenantId,
       });
-      
+
+      // Also save as a document for Data Tables integration
+      const fileName = `trial_balance_${period || '2025'}_${Date.now()}.json`;
+      const generatedDocument = await storage.createDocument({
+        fileName: fileName,
+        originalName: `Trial Balance - ${period || '2025'}`,
+        mimeType: 'application/json',
+        fileSize: JSON.stringify(formattedTrialBalance).length,
+        filePath: `generated/${fileName}`,
+        documentType: 'trial_balance',
+        status: 'extracted',
+        uploadedBy: userId,
+        tenantId: user.tenantId,
+        metadata: {
+          period: period || '2025',
+          generated: true,
+          generatedAt: new Date().toISOString(),
+          reportType: 'trial_balance'
+        },
+        extractedData: {
+          documentType: 'trial_balance',
+          period: period || '2025',
+          totalDebits: trialBalance.totalDebits,
+          totalCredits: trialBalance.totalCredits,
+          isBalanced: trialBalance.isBalanced,
+          entries: trialBalance.entries,
+          summary: {
+            totalEntries: trialBalance.entries.length,
+            totalDebits: trialBalance.totalDebits,
+            totalCredits: trialBalance.totalCredits,
+            balanceDifference: Math.abs(trialBalance.totalDebits - trialBalance.totalCredits)
+          }
+        }
+      });
+
       res.json({
         message: "Trial balance generated successfully",
-        data: trialBalance
+        data: formattedTrialBalance,
+        documentId: generatedDocument.id
+      });
+    } catch (error) {
+      console.error("Error generating trial balance:", error);
+      res.status(500).json({ message: "Failed to generate trial balance: " + error.message });
+    }
+  });
+
+  // Generate trial balance (alias endpoint)
+  app.post('/api/trial-balance/generate', noAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.userId;
+      const { period } = req.body;
+
+      console.log(`Trial Balance Generation Request: ${JSON.stringify({ userId, period })}`);
+
+      // SECURITY: Get user's tenant_id for data isolation
+      const user = await storage.getUser(userId);
+      if (!user?.tenantId) {
+        return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
+      }
+
+      // Get journal entries for the specified period and tenant
+      const journalEntries = await storage.getJournalEntriesByPeriod(period || '2025', user.tenantId);
+
+      // Generate trial balance from journal entries
+      const trialBalance = await financialReportsService.generateTrialBalance(journalEntries);
+
+      // Format numbers as text to bypass frontend rendering issues
+      const formattedTrialBalance = {
+        ...trialBalance,
+        totalDebitsText: formatCurrency(trialBalance.totalDebits),
+        totalCreditsText: formatCurrency(trialBalance.totalCredits),
+        entries: trialBalance.entries.map((entry: any) => ({
+          ...entry,
+          debitBalanceText: formatCurrency(entry.debitBalance),
+          creditBalanceText: formatCurrency(entry.creditBalance)
+        }))
+      };
+
+      // Save as financial statement
+      await storage.createFinancialStatement({
+        statementType: 'trial_balance',
+        period: period || '2025',
+        data: formattedTrialBalance,
+        isValid: trialBalance.isBalanced,
+        generatedBy: userId,
+        tenantId: user.tenantId,
+      });
+
+      res.json({
+        message: "Trial balance generated successfully",
+        data: formattedTrialBalance
       });
     } catch (error) {
       console.error("Error generating trial balance:", error);
@@ -1656,6 +2735,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate profit and loss report endpoint
+  app.post('/api/reports/profit-loss/generate', noAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.userId;
+      const { period } = req.body;
+
+      console.log(`Profit & Loss Generation Request: ${JSON.stringify({ userId, period })}`);
+
+      // SECURITY: Get user's tenant_id for data isolation
+      const user = await storage.getUser(userId);
+      if (!user?.tenantId) {
+        return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
+      }
+
+      // Get journal entries for the specified period and tenant
+      const journalEntries = await storage.getJournalEntriesByPeriod(period || '2025', user.tenantId);
+
+      // Generate profit & loss from journal entries
+      const profitLoss = await financialReportsService.generateProfitLoss(journalEntries);
+
+      // Save as financial statement
+      await storage.createFinancialStatement({
+        statementType: 'profit_loss',
+        period: period || '2025',
+        data: profitLoss,
+        isValid: true,
+        generatedBy: userId,
+        tenantId: user.tenantId,
+      });
+
+      res.json({
+        message: "Profit & loss statement generated successfully",
+        data: profitLoss
+      });
+    } catch (error) {
+      console.error("Error generating profit & loss:", error);
+      res.status(500).json({ message: "Failed to generate profit & loss: " + error.message });
+    }
+  });
+
   // Generate profit & loss statement
   app.post('/api/reports/profit-loss', noAuth, async (req: any, res) => {
     try {
@@ -1714,6 +2833,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating profit & loss:", error);
       res.status(500).json({ message: "Failed to generate profit & loss" });
+    }
+  });
+
+  // Generate balance sheet report endpoint
+  app.post('/api/reports/balance-sheet/generate', noAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.userId;
+      const { period } = req.body;
+
+      console.log(`Balance Sheet Generation Request: ${JSON.stringify({ userId, period })}`);
+
+      // SECURITY: Get user's tenant_id for data isolation
+      const user = await storage.getUser(userId);
+      if (!user?.tenantId) {
+        return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
+      }
+
+      // Get journal entries for the specified period and tenant
+      const journalEntries = await storage.getJournalEntriesByPeriod(period || '2025', user.tenantId);
+
+      // Generate balance sheet from journal entries
+      const balanceSheet = await financialReportsService.generateBalanceSheet(journalEntries);
+
+      // Save as financial statement
+      await storage.createFinancialStatement({
+        statementType: 'balance_sheet',
+        period: period || '2025',
+        data: balanceSheet,
+        isValid: balanceSheet.isBalanced,
+        generatedBy: userId,
+        tenantId: user.tenantId,
+      });
+
+      res.json({
+        message: "Balance sheet generated successfully",
+        data: balanceSheet
+      });
+    } catch (error) {
+      console.error("Error generating balance sheet:", error);
+      res.status(500).json({ message: "Failed to generate balance sheet: " + error.message });
     }
   });
 
@@ -3030,6 +4189,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test route to create sample journal entries with documentId
+  app.post('/api/test/create-sample-journal-entries', simpleAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+
+      // Get user's tenant_id
+      const user = await storage.getUser(userId);
+      if (!user?.tenantId) {
+        console.error(`Security violation: User ${userId} attempted to create journal entries without tenant assignment`);
+        return res.status(403).json({ message: "Access denied: User not assigned to any tenant" });
+      }
+
+      // Create sample journal entries without documentId (null for testing)
+      const sampleEntries = [
+        {
+          journalId: `JE${Date.now()}_SAMPLE_1`,
+          date: new Date(),
+          accountCode: 'EXPENSE',
+          accountName: 'Sample Expense',
+          debitAmount: "1500",
+          creditAmount: "0",
+          narration: 'Sample journal entry for testing',
+          entity: 'Test Entity',
+          documentId: null,
+          tenantId: user.tenantId,
+          createdBy: userId,
+        },
+        {
+          journalId: `JE${Date.now()}_SAMPLE_2`,
+          date: new Date(),
+          accountCode: 'PAYABLE',
+          accountName: 'Sample Payable',
+          debitAmount: "0",
+          creditAmount: "1500",
+          narration: 'Sample journal entry for testing',
+          entity: 'Test Entity',
+          documentId: null,
+          tenantId: user.tenantId,
+          createdBy: userId,
+        },
+        {
+          journalId: `JE${Date.now()}_SAMPLE_3`,
+          date: new Date(),
+          accountCode: 'REVENUE',
+          accountName: 'Sample Revenue',
+          debitAmount: "0",
+          creditAmount: "2000",
+          narration: 'Another sample journal entry',
+          entity: 'Test Entity 2',
+          documentId: null,
+          tenantId: user.tenantId,
+          createdBy: userId,
+        }
+      ];
+
+      let createdCount = 0;
+      for (const entry of sampleEntries) {
+        await storage.createJournalEntry(entry);
+        createdCount++;
+      }
+
+      res.json({ message: `Created ${createdCount} sample journal entries`, count: createdCount });
+    } catch (error) {
+      console.error("Error creating sample journal entries:", error);
+      res.status(500).json({ message: "Failed to create sample journal entries" });
+    }
+  });
+
   // Test route to manually create journal entries for existing documents
   app.post('/api/test/create-journal-entries', simpleAuth, async (req: any, res) => {
     try {
@@ -3733,9 +4960,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userFinancialReports = financialStatements.filter(report => report.tenantId === user.tenantId);
       const userComplianceData = complianceChecks.filter(check => check.tenantId === user.tenantId);
       
-      // Process query using OpenAI
-      const { chatService } = await import('./services/chatService');
-      const result = await chatService.processNaturalLanguageQuery(query, {
+      // Process query using Cerebras AI
+      const { cerebrasService } = await import('./services/cerebrasService');
+      const result = await cerebrasService.processNaturalLanguageQuery(query, {
         availableDocuments: userDocuments,
         journalEntries: userJournalEntries,
         financialReports: userFinancialReports,
@@ -3845,26 +5072,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { message } = req.body;
       const userId = req.user.claims.sub;
-      
-      // Simple message processing
-      let response = "I received your message. ";
-      let agentName = "System";
-      
-      if (message.toLowerCase().includes('status')) {
-        response += "All agents are currently operational. Use 'start' to begin processing documents.";
-        agentName = "StatusBot";
-      } else if (message.toLowerCase().includes('help')) {
-        response += "Available commands: 'start' to begin workflow, 'status' for agent status, 'stop' to halt processing.";
-        agentName = "HelpBot";
-      } else {
-        response += "I understand you want to work with the financial documents. Try saying 'start' to begin processing.";
-        agentName = "AssistantBot";
-      }
-      
+
+      // Gather context data for the AI
+      const [documents, journalEntries, financialStatements, complianceChecks] = await Promise.all([
+        storage.getDocuments(),
+        storage.getJournalEntries(),
+        storage.getFinancialStatements(),
+        storage.getComplianceChecks()
+      ]);
+
+      // Filter by tenant if available
+      const userTenantId = req.user?.tenantId || 'default';
+      const userDocuments = documents.filter(doc => doc.tenantId === userTenantId);
+      const userJournalEntries = journalEntries.filter(entry => entry.tenantId === userTenantId);
+      const userFinancialReports = financialStatements.filter(report => report.tenantId === userTenantId);
+      const userComplianceData = complianceChecks.filter(check => check.tenantId === userTenantId);
+
+      // Use Cerebras AI for intelligent response
+      const { cerebrasService } = await import('./services/cerebrasService');
+      const result = await cerebrasService.processNaturalLanguageQuery(message, {
+        availableDocuments: userDocuments,
+        journalEntries: userJournalEntries,
+        financialReports: userFinancialReports,
+        complianceData: userComplianceData,
+        userTenant: userTenantId
+      });
+
       res.json({
-        response,
-        agentName,
-        timestamp: new Date().toISOString()
+        response: result.response,
+        agentName: "CerebrasAgent",
+        timestamp: new Date().toISOString(),
+        suggestions: result.suggestions,
+        insights: result.insights,
+        confidence: result.confidence
       });
     } catch (error) {
       console.error("Error processing chat message:", error);

@@ -268,9 +268,30 @@ export default function AgentChat() {
         type: 'agent',
         content: data.response,
         timestamp: new Date(),
-        agentName: data.agentName
+        agentName: data.agentName || 'CerebrasAgent'
       };
       setMessages(prev => [...prev, agentResponse]);
+
+      // Show suggestions and insights if available
+      if (data.suggestions && data.suggestions.length > 0) {
+        const suggestionsMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          type: 'system',
+          content: `💡 Suggestions:\n${data.suggestions.map(s => `• ${s}`).join('\n')}`,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, suggestionsMessage]);
+      }
+
+      if (data.insights && data.insights.length > 0) {
+        const insightsMessage: ChatMessage = {
+          id: (Date.now() + 2).toString(),
+          type: 'system',
+          content: `🔍 Insights:\n${data.insights.map(i => `• ${i}`).join('\n')}`,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, insightsMessage]);
+      }
     }
   });
 
@@ -300,25 +321,36 @@ export default function AgentChat() {
         type: 'agent',
         content: data.result.response,
         timestamp: new Date(),
-        agentName: 'AI Assistant'
+        agentName: 'Cerebras AI'
       };
       setMessages(prev => [...prev, agentResponse]);
-      
-      // Add suggested actions if available
-      if (data.result.suggestedActions && data.result.suggestedActions.length > 0) {
-        const actionsMessage: ChatMessage = {
-          id: Date.now().toString(),
+
+      // Add suggestions if available
+      if (data.result.suggestions && data.result.suggestions.length > 0) {
+        const suggestionsMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
           type: 'system',
-          content: `💡 Suggested actions:\n${data.result.suggestedActions.map((action: string, index: number) => `${index + 1}. ${action}`).join('\n')}`,
+          content: `💡 Suggestions:\n${data.result.suggestions.map((suggestion: string) => `• ${suggestion}`).join('\n')}`,
           timestamp: new Date()
         };
-        setMessages(prev => [...prev, actionsMessage]);
+        setMessages(prev => [...prev, suggestionsMessage]);
       }
-      
+
+      // Add insights if available
+      if (data.result.insights && data.result.insights.length > 0) {
+        const insightsMessage: ChatMessage = {
+          id: (Date.now() + 2).toString(),
+          type: 'system',
+          content: `🔍 Insights:\n${data.result.insights.map((insight: string) => `• ${insight}`).join('\n')}`,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, insightsMessage]);
+      }
+
       // Show confidence level if low
-      if (data.result.confidence < 0.7) {
+      if (data.result.confidence && data.result.confidence < 0.7) {
         const confidenceMessage: ChatMessage = {
-          id: Date.now().toString(),
+          id: (Date.now() + 3).toString(),
           type: 'system',
           content: `⚠️ I'm ${Math.round(data.result.confidence * 100)}% confident in this response. You may want to verify or provide more specific information.`,
           timestamp: new Date()

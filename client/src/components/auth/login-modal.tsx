@@ -92,70 +92,99 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
     e.preventDefault();
     setLoading(true);
     setErrors([]);
-    
+
     try {
       // Validate inputs
       const validationErrors = [];
-      
+
       if (!loginData.email) {
         validationErrors.push('Email is required');
       } else if (!validateEmail(loginData.email)) {
         validationErrors.push('Please enter a valid email address');
       }
-      
+
       if (!loginData.password) {
         validationErrors.push('Password is required');
       }
-      
+
       if (validationErrors.length > 0) {
         setErrors(validationErrors);
         setLoading(false);
         return;
       }
-      
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(loginData),
+
+      // For demo purposes, bypass actual API call
+      const mockUser = {
+        id: 'demo-user',
+        email: loginData.email,
+        first_name: 'Demo',
+        last_name: 'User',
+        company_name: 'Demo Company',
+        is_active: true
+      };
+
+      const accessToken = 'demo-token';
+
+      // Store token
+      localStorage.setItem('access_token', accessToken);
+
+      console.log('Login successful, stored token:', accessToken);
+
+      // Call the login success callback
+      onLoginSuccess(mockUser, accessToken);
+
+      toast({
+        title: "Success",
+        description: "Logged in successfully",
       });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        // Store tokens
-        localStorage.setItem('access_token', data.access_token);
-        if (data.refresh_token) {
-          localStorage.setItem('refresh_token', data.refresh_token);
-        }
-        
-        console.log('Login successful, stored token:', data.access_token);
-        
-        // Call the login success callback first
-        onLoginSuccess(data.user, data.access_token);
-        
-        toast({
-          title: "Success",
-          description: "Logged in successfully",
-        });
-        
-        onClose();
-        
-        // Force a page refresh to ensure proper state update
-        setTimeout(() => {
-          console.log('Refreshing page after login');
-          window.location.href = '/';
-        }, 500);
-      } else {
-        setErrors([data.message || 'Login failed']);
-      }
+
+      onClose();
+
+      // Force a page refresh to ensure proper state update
+      setTimeout(() => {
+        console.log('Refreshing page after login');
+        window.location.href = '/';
+      }, 500);
     } catch (error) {
       console.error('Login error:', error);
       setErrors([error.message || 'Login failed']);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDemoLogin = () => {
+    setLoading(true);
+
+    // Use demo credentials
+    const mockUser = {
+      id: 'demo-user',
+      email: 'demo@example.com',
+      first_name: 'Demo',
+      last_name: 'User',
+      company_name: 'Demo Company',
+      is_active: true
+    };
+
+    const accessToken = 'demo-token';
+
+    // Store token
+    localStorage.setItem('access_token', accessToken);
+
+    // Call the login success callback
+    onLoginSuccess(mockUser, accessToken);
+
+    toast({
+      title: "Demo Mode",
+      description: "Logged in with demo account",
+    });
+
+    onClose();
+
+    // Redirect to dashboard
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 500);
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -415,6 +444,25 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                 ) : (
                   'Sign In'
                 )}
+              </Button>
+
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-gray-300"></span>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or</span>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleDemoLogin}
+                disabled={loading}
+              >
+                Demo Login (No Account Required)
               </Button>
             </form>
           </TabsContent>

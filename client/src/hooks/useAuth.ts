@@ -3,15 +3,16 @@ import { useState } from "react";
 
 export function useAuth() {
   const [token, setToken] = useState<string | null>(() => {
-    // Initialize localStorage with demo token on first render
+    // Check if there's a stored token on initialization
     if (typeof window !== 'undefined') {
-      localStorage.setItem('access_token', 'demo-token');
+      const storedToken = localStorage.getItem('access_token');
+      return storedToken; // Return stored token or null
     }
-    return 'demo-token';
+    return null;
   });
   const queryClient = useQueryClient();
 
-  // Mock user data for demo - no authentication required
+  // Mock user data for demo - only used when authenticated
   const mockUser = {
     id: 'demo-user',
     email: 'demo@example.com',
@@ -21,26 +22,32 @@ export function useAuth() {
     is_active: true
   };
 
-  const login = (userData: any, accessToken: string, refreshToken?: string) => {
+  const login = (userData: any = mockUser, accessToken: string = 'demo-token', refreshToken?: string) => {
     // For demo purposes, just set the token
     setToken(accessToken);
     localStorage.setItem('access_token', accessToken);
     queryClient.setQueryData(["/api/auth/user"], userData);
+    // Redirect to dashboard after login
+    window.location.href = '/';
   };
 
   const logout = async () => {
-    // For demo purposes, just clear the token
+    // For demo purposes, clear the token and state
     setToken(null);
     localStorage.removeItem('access_token');
     queryClient.setQueryData(["/api/auth/user"], null);
+    queryClient.clear(); // Clear all cached data
   };
 
-  console.log('useAuth state:', { isLoading: false, token, hasStoredToken: true });
-  
+  // User is authenticated if they have a token
+  const isAuthenticated = !!token;
+
+  console.log('useAuth state:', { isLoading: false, token, isAuthenticated });
+
   return {
-    user: mockUser,
+    user: isAuthenticated ? mockUser : null,
     isLoading: false,
-    isAuthenticated: true, // Always authenticated for demo
+    isAuthenticated,
     login,
     logout,
     token,

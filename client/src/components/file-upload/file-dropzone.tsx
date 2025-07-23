@@ -86,6 +86,8 @@ export default function FileDropzone() {
       
       queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      // Also invalidate extracted data queries for Data Tables
+      queryClient.invalidateQueries({ queryKey: ['/api/extracted-data'] });
     },
     onError: (error: any, variables) => {
       console.error("Upload error:", error);

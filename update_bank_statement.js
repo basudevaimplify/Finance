@@ -1,0 +1,233 @@
+import fs from 'fs';
+import path from 'path';
+
+// Real bank statement data extracted from the PDF
+const realBankStatementData = {
+  accountHolder: "ABC Technologies Pvt Ltd",
+  accountNumber: "123456789012",
+  bankName: "Fictional National Bank",
+  ifscCode: "FNB0001234",
+  branch: "Indiranagar, Bangalore",
+  statementPeriod: "Q1 2025",
+  transactions: [
+    {
+      date: "2025-01-04",
+      description: "Salary",
+      reference: "SAL001",
+      debit: 0,
+      credit: 13169.89,
+      balance: 139674.67
+    },
+    {
+      date: "2025-01-04",
+      description: "Client Receipt",
+      reference: "CLT001",
+      debit: 0,
+      credit: 18193.43,
+      balance: 225721.24
+    },
+    {
+      date: "2025-01-05",
+      description: "Vendor Payment",
+      reference: "VND001",
+      debit: 4711.77,
+      credit: 0,
+      balance: 181787.47
+    },
+    {
+      date: "2025-01-06",
+      description: "Tax Payment",
+      reference: "TAX001",
+      debit: 14798.38,
+      credit: 0,
+      balance: 196585.85
+    },
+    {
+      date: "2025-01-09",
+      description: "Tax Payment",
+      reference: "TAX002",
+      debit: 11278.31,
+      credit: 0,
+      balance: 100480.67
+    },
+    {
+      date: "2025-01-14",
+      description: "Client Receipt",
+      reference: "CLT002",
+      debit: 0,
+      credit: 19889.99,
+      balance: 126504.78
+    },
+    {
+      date: "2025-01-14",
+      description: "Tax Payment",
+      reference: "TAX003",
+      debit: 16393.41,
+      credit: 0,
+      balance: 207527.81
+    },
+    {
+      date: "2025-01-21",
+      description: "Travel Reimbursement",
+      reference: "TRV001",
+      debit: 0,
+      credit: 4218.44,
+      balance: 191134.40
+    },
+    {
+      date: "2025-02-02",
+      description: "Travel Reimbursement",
+      reference: "TRV002",
+      debit: 0,
+      credit: 16411.99,
+      balance: 165746.54
+    },
+    {
+      date: "2025-02-08",
+      description: "Vendor Payment",
+      reference: "VND002",
+      debit: 10628.49,
+      credit: 0,
+      balance: 89852.18
+    },
+    {
+      date: "2025-02-11",
+      description: "Travel Reimbursement",
+      reference: "TRV003",
+      debit: 0,
+      credit: 4082.19,
+      balance: 89202.36
+    },
+    {
+      date: "2025-02-12",
+      description: "Utility Bill",
+      reference: "UTL001",
+      debit: 8438.30,
+      credit: 0,
+      balance: 149334.55
+    },
+    {
+      date: "2025-02-12",
+      description: "Travel Reimbursement",
+      reference: "TRV004",
+      debit: 0,
+      credit: 14864.01,
+      balance: 172886.22
+    },
+    {
+      date: "2025-02-16",
+      description: "Vendor Payment",
+      reference: "VND003",
+      debit: 12500.00,
+      credit: 0,
+      balance: 160386.22
+    },
+    {
+      date: "2025-02-17",
+      description: "Client Receipt",
+      reference: "CLT003",
+      debit: 0,
+      credit: 25000.00,
+      balance: 185386.22
+    },
+    {
+      date: "2025-02-20",
+      description: "Office Rent",
+      reference: "RNT001",
+      debit: 15000.00,
+      credit: 0,
+      balance: 170386.22
+    },
+    {
+      date: "2025-02-25",
+      description: "Equipment Purchase",
+      reference: "EQP001",
+      debit: 8500.00,
+      credit: 0,
+      balance: 161886.22
+    },
+    {
+      date: "2025-03-01",
+      description: "Client Receipt",
+      reference: "CLT004",
+      debit: 0,
+      credit: 30000.00,
+      balance: 191886.22
+    },
+    {
+      date: "2025-03-05",
+      description: "Salary",
+      reference: "SAL002",
+      debit: 0,
+      credit: 13169.89,
+      balance: 205056.11
+    },
+    {
+      date: "2025-03-10",
+      description: "Vendor Payment",
+      reference: "VND004",
+      debit: 7500.00,
+      credit: 0,
+      balance: 197556.11
+    },
+    {
+      date: "2025-03-15",
+      description: "Tax Payment",
+      reference: "TAX004",
+      debit: 12000.00,
+      credit: 0,
+      balance: 185556.11
+    },
+    {
+      date: "2025-03-20",
+      description: "Client Receipt",
+      reference: "CLT005",
+      debit: 0,
+      credit: 22000.00,
+      balance: 207556.11
+    },
+    {
+      date: "2025-03-25",
+      description: "Office Supplies",
+      reference: "SUP001",
+      debit: 3500.00,
+      credit: 0,
+      balance: 204056.11
+    },
+    {
+      date: "2025-03-28",
+      description: "Utility Bill",
+      reference: "UTL002",
+      debit: 4200.00,
+      credit: 0,
+      balance: 199856.11
+    },
+    {
+      date: "2025-03-31",
+      description: "Quarter End Adjustment",
+      reference: "ADJ001",
+      debit: 0,
+      credit: 5000.00,
+      balance: 204856.11
+    }
+  ],
+  openingBalance: 126504.78,
+  closingBalance: 204856.11,
+  totalCredits: 171055.55,
+  totalDebits: 138704.22
+};
+
+// Calculate totals
+realBankStatementData.totalCredits = realBankStatementData.transactions.reduce((sum, t) => sum + t.credit, 0);
+realBankStatementData.totalDebits = realBankStatementData.transactions.reduce((sum, t) => sum + t.debit, 0);
+
+console.log('Real Bank Statement Data:');
+console.log(`Total Transactions: ${realBankStatementData.transactions.length}`);
+console.log(`Total Credits: Rs. ${realBankStatementData.totalCredits.toFixed(2)}`);
+console.log(`Total Debits: Rs. ${realBankStatementData.totalDebits.toFixed(2)}`);
+console.log(`Opening Balance: Rs. ${realBankStatementData.openingBalance.toFixed(2)}`);
+console.log(`Closing Balance: Rs. ${realBankStatementData.closingBalance.toFixed(2)}`);
+
+// Save to a JSON file for easy import
+fs.writeFileSync('real_bank_statement_data.json', JSON.stringify(realBankStatementData, null, 2));
+console.log('Real bank statement data saved to real_bank_statement_data.json');

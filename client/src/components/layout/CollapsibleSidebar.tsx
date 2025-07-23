@@ -64,6 +64,7 @@ export default function CollapsibleSidebar() {
 
   const handleSignOut = async () => {
     await logout();
+    // Force a full page reload to ensure the router re-evaluates authentication
     window.location.href = '/';
   };
 

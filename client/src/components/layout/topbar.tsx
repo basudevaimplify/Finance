@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, User } from "lucide-react";
 
 export default function TopBar() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, logout } = useAuth();
 
   if (isLoading) {
     return (
@@ -51,7 +51,11 @@ export default function TopBar() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => window.location.href = '/api/logout'}
+          onClick={async () => {
+            await logout();
+            // Force a full page reload to ensure the router re-evaluates authentication
+            window.location.href = '/';
+          }}
           className="text-muted-foreground hover:text-foreground"
         >
           <LogOut className="h-4 w-4" />

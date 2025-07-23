@@ -97,31 +97,41 @@ export default function FinancialReports() {
 
   const generateReportMutation = useMutation({
     mutationFn: async (reportType: string) => {
+      console.log('Starting report generation for:', reportType, 'with period:', selectedPeriod);
+
       const token = localStorage.getItem('access_token');
       if (!token) {
-        throw new Error('No authentication token found');
+        console.log('No access token found, using demo token');
       }
-      
+
       // Use direct fetch to avoid apiRequest Authorization header issues
-      const response = await fetch(`/api/reports/${reportType}`, {
+      const response = await fetch(`/api/reports/${reportType}/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${token || 'demo-token'}`,
         },
         body: JSON.stringify({
           period: selectedPeriod,
         }),
         credentials: 'include',
       });
-      
+
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Response error:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
       }
-      
-      return await response.json();
+
+      const data = await response.json();
+      console.log('Response data:', data);
+      return data;
     },
     onSuccess: (data, reportType) => {
+      console.log('Report generation successful:', data);
       toast({
         title: "Report Generated",
         description: `${reportType} report generated successfully`,
@@ -129,6 +139,8 @@ export default function FinancialReports() {
       queryClient.invalidateQueries({ queryKey: ["/api/financial-statements"] });
     },
     onError: (error) => {
+      console.error('Report generation error:', error);
+
       if (isUnauthorizedError(error)) {
         toast({
           title: "Unauthorized",
@@ -140,7 +152,7 @@ export default function FinancialReports() {
         }, 500);
         return;
       }
-      
+
       toast({
         title: "Generation Failed",
         description: error.message || "Failed to generate report",

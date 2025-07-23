@@ -38,6 +38,7 @@ function Router() {
         <>
           <Route path="/" component={Landing} />
           <Route path="/logout" component={Landing} />
+          <Route component={Landing} />
         </>
       ) : (
         <>
@@ -60,9 +61,9 @@ function Router() {
           <Route path="/onboarding" component={Onboarding} />
           <Route path="/settings" component={Settings} />
           <Route path="/admin" component={AdminPanel} />
+          <Route component={NotFound} />
         </>
       )}
-      <Route component={NotFound} />
     </Switch>
   );
 }

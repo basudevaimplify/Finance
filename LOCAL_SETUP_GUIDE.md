@@ -63,12 +63,12 @@ sudo apt install postgresql postgresql-contrib
 # Create database and user
 sudo -u postgres psql
 CREATE DATABASE qrt_closure;
-CREATE USER qrt_user WITH PASSWORD 'your_password';
+CREATE USER qrt_user WITH PASSWORD '1';
 GRANT ALL PRIVILEGES ON DATABASE qrt_closure TO qrt_user;
 \q
 
 # Update your .env file
-DATABASE_URL=postgresql://qrt_user:your_password@localhost:5432/qrt_closure
+DATABASE_URL=postgresql://qrt_user:1@localhost:5432/qrt_closure
 ```
 
 **Option B: Cloud Database**

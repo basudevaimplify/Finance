@@ -189,23 +189,74 @@ export class AnthropicService {
     };
   }
 
-  async extractFinancialData(documentType: string, content: string): Promise<DataExtractionResult> {
+  async extractFinancialData(documentType: string, content: string, filePath?: string): Promise<DataExtractionResult> {
+    // For bank statements, use specialized parser
+    if (documentType === 'bank_statement' && filePath) {
+      try {
+        const { bankStatementParser } = await import('./bankStatementParser');
+        const bankData = await bankStatementParser.parseBankStatement(filePath);
+
+        return {
+          extractedData: bankData,
+          confidence: 0.95,
+          warnings: []
+        };
+      } catch (error) {
+        console.error('Bank statement parsing failed, falling back to AI extraction:', error);
+        // Fall through to AI-based extraction
+      }
+    }
+
+    // For sales register, use Excel parser
+    if (documentType === 'sales_register' && filePath && filePath.endsWith('.xlsx')) {
+      try {
+        const { SalesRegisterParser } = await import('./excelParsers');
+        const salesData = SalesRegisterParser.parseSalesRegister(filePath);
+
+        return {
+          extractedData: salesData,
+          confidence: 0.95,
+          warnings: []
+        };
+      } catch (error) {
+        console.error('Sales register parsing failed, falling back to AI extraction:', error);
+        // Fall through to AI-based extraction
+      }
+    }
+
+    // For purchase register, use Excel parser
+    if (documentType === 'purchase_register' && filePath && filePath.endsWith('.xlsx')) {
+      try {
+        const { PurchaseRegisterParser } = await import('./excelParsers');
+        const purchaseData = PurchaseRegisterParser.parsePurchaseRegister(filePath);
+
+        return {
+          extractedData: purchaseData,
+          confidence: 0.95,
+          warnings: []
+        };
+      } catch (error) {
+        console.error('Purchase register parsing failed, falling back to AI extraction:', error);
+        // Fall through to AI-based extraction
+      }
+    }
+
     const prompt = `
     Extract structured financial data from this ${documentType} document.
-    
+
     Content: ${content}
-    
+
     Based on the document type "${documentType}", extract relevant financial data:
-    
+
     For journal entries: Extract date, account codes, account names, debit/credit amounts, narration
     For GST documents: Extract GSTIN, invoice numbers, taxable amounts, tax amounts, place of supply
     For TDS documents: Extract PAN, TDS amount, section code, deductee details
     For trial balance: Extract account names, debit balances, credit balances
     For bank statements: Extract transaction date, description, debit/credit amounts, balance
-    
+
     Ensure amounts are in Indian Rupees format.
     Validate account codes against common Indian chart of accounts.
-    
+
     Respond in JSON format with:
     {
       "extractedData": {
@@ -231,13 +282,13 @@ export class AnthropicService {
     });
 
     let responseText = response.content[0].text;
-    
+
     // Clean up response text to extract JSON
     if (responseText.includes('```json')) {
       responseText = responseText.substring(responseText.indexOf('```json') + 7);
       responseText = responseText.substring(0, responseText.indexOf('```'));
     }
-    
+
     const result = JSON.parse(responseText.trim());
     return {
       extractedData: result.extractedData,

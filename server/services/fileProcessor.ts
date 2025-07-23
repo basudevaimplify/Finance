@@ -218,17 +218,23 @@ export class FileProcessorService {
   }
 
   private async extractPDFContent(filePath: string): Promise<string> {
-    // In a real implementation, you would use a library like 'pdf-parse' or 'pdfjs-dist'
-    // For now, we'll return a placeholder that simulates extracted content
-    const buffer = await readFile(filePath);
-    
-    // Simple text extraction - in production, use proper PDF parsing
-    const textContent = buffer.toString('utf-8', 0, 2000);
-    
-    // Extract readable text portions
-    const readableText = textContent.replace(/[^\x20-\x7E\n\r]/g, ' ').trim();
-    
-    return readableText || 'PDF content extracted (placeholder)';
+    try {
+      // Use pdf-parse library for proper PDF text extraction
+      const pdfParse = require('pdf-parse');
+      const buffer = await readFile(filePath);
+
+      const data = await pdfParse(buffer);
+      return data.text || 'PDF content extracted but empty';
+    } catch (error) {
+      console.error('PDF parsing failed, falling back to basic extraction:', error);
+
+      // Fallback to basic extraction
+      const buffer = await readFile(filePath);
+      const textContent = buffer.toString('utf-8', 0, 2000);
+      const readableText = textContent.replace(/[^\x20-\x7E\n\r]/g, ' ').trim();
+
+      return readableText || 'PDF content extracted (placeholder)';
+    }
   }
 
   async deleteFile(filePath: string): Promise<void> {

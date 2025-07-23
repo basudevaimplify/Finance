@@ -314,11 +314,12 @@ export class LangGraphOrchestrator {
   private async executeDataExtractor(workflow: WorkflowState, node: LangGraphNode): Promise<void> {
     const document = workflow.globalState.document;
     const classification = workflow.globalState.classification;
-    
+
     const content = await fileProcessorService.extractTextContent(document.filePath);
     const extraction = await anthropicService.extractFinancialData(
       classification.documentType,
-      content
+      content,
+      document.filePath // Pass file path for specialized parsers
     );
 
     // Update document with extracted data

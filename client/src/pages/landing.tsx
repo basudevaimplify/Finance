@@ -22,7 +22,7 @@ import LoginModal from '@/components/auth/login-modal';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function Landing() {
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(true);
   const { login } = useAuth();
 
   const handleLoginSuccess = (user: any, token: string) => {
